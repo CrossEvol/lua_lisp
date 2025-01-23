@@ -1,0 +1,71 @@
+local KEYWORDS = {
+    DEF_CLASS = "defclass",
+    DEF_CONSTANT = "defconstant",
+    DEF_GENERIC = "defgeneric",
+    DEF_METHOD = "defmethod",
+    DEF_PARAMETER = "defparameter",
+    DEFUN = "defun",
+    DEF_VAR = "defvar",
+    DO = "do",
+    DOLIST = "dolist",
+    dOTIMES = "dotimes",
+    IF = "if",
+    LAMBDA = "lambda",
+    LET = "let",
+    LOOP = "loop",
+    WHEN = "when",
+    AND = "AND",
+    T = "T",
+    NIL = "NIL",
+}
+
+local TokenType = {
+    -- non keywords
+    LPAREN = '(',
+    RPAREN = ')',
+    COLON = ':',
+    SEMI = ';',
+    SLASH = '/',
+    SINGLE_QUOTE = '\'',
+    DOUBLE_QUOTE = '"',
+    SHARP = '#',
+    NEGATIVE = '-',
+    POSITIVE = '+',
+    EXPONENT = 'E',
+    ESCAPE = '\\',
+    ASTERISK = '*',
+    DOT = ".",
+    EOF = 'EOF',
+    NUMBER = 'NUMBER',
+    INTEGER = 'INTEGER',
+    FLOAT = 'FLOAT',
+    RATIONAL = 'Rational',
+    ID = 'ID',
+
+    -- keywords
+    DEF_CLASS = "defclass",
+    DEF_CONSTANT = "defconstant",
+    DEF_GENERIC = "defgeneric",
+    DEF_METHOD = "defmethod",
+    DEF_PARAMETER = "defparameter",
+    DEFUN = "defun",
+    DEF_VAR = "defvar",
+    DO = "do",
+    DOLIST = "dolist",
+    dOTIMES = "dotimes",
+    IF = "if",
+    LAMBDA = "lambda",
+    LET = "let",
+    LOOP = "loop",
+    WHEN = "when",
+    AND = "AND",
+    T = "T",
+    NIL = "NIL",
+}
+
+
+
+return {
+    TokenType = TokenType,
+    KEYWORDS = KEYWORDS,
+}
