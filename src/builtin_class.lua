@@ -7,6 +7,7 @@ local BUILT_IN_CLASS = {
     METHOD = 'Method',
     NULL = 'Null',
     FUNCTION = 'Function',
+    BUILT_IN_FUNCTION = 'BuiltinFunction',
     SYMBOL = 'Symbol',
     NUMBER = 'Number',
     FIX_NUM = 'FixNum',
@@ -16,6 +17,7 @@ local BUILT_IN_CLASS = {
     RATIONAL = 'Rational',
     CHARACTER = 'Character',
     STRING = 'String',
+    SIMPLE_BASE_STRING = 'SIMPLE-BASE-STRING',
     ARRAY = 'Array',
     CONS = 'Cons',
     HASH_TABLE = 'HashTable',
@@ -33,6 +35,13 @@ function T:new(o)
     return o
 end
 
+function T:toString()
+    local s = tostring(self)
+    local address = string.gsub(s, 'table: ', '')
+    address = string.sub(address, 6, 15)
+    return string.format("#<BUILT_IN_CLASS> %s {%s}", self.classType, address)
+end
+
 StandardObject = T:new({ classType = BUILT_IN_CLASS.STANDARD_OBJECT, })
 
 StructureObject = T:new({ classType = BUILT_IN_CLASS.STRUCTURE_OBJECT, })
@@ -46,6 +55,8 @@ Method = T:new({ classType = BUILT_IN_CLASS.METHOD, })
 Null = T:new({ classType = BUILT_IN_CLASS.NULL, })
 
 Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, })
+
+BuiltinFunction = T:new({ classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION, })
 
 Symbol = T:new({ classType = BUILT_IN_CLASS.SYMBOL, })
 
@@ -74,6 +85,10 @@ Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, })
 -- @field classType : BUILT_IN_CLASS = STRING
 String = T:new({ classType = BUILT_IN_CLASS.STRING, })
 
+-- @field classType : BUILT_IN_CLASS = STRING
+-- @field stringValue : String = ''
+SIMPLE_BASE_STRING = T:new({ classType = BUILT_IN_CLASS.SIMPLE_BASE_STRING, stringValue = '' })
+
 -- @field classType : BUILT_IN_CLASS = ARRAY
 Array = T:new({ classType = BUILT_IN_CLASS.ARRAY, })
 
@@ -84,7 +99,7 @@ Cons = Array:new({ classType = BUILT_IN_CLASS.CONS, })
 HashTable = T:new({ classType = BUILT_IN_CLASS.HASH_TABLE, })
 
 -- @field classType : BUILT_IN_CLASS = AUX
-Aux = T:new({ classType = BUILT_IN_CLASS.AUX, })
+Auxiliary = T:new({ classType = BUILT_IN_CLASS.AUX, })
 
 Value = {
     classType = BUILT_IN_CLASS.VALUE,
@@ -120,10 +135,11 @@ return {
     Array = Array,
     Cons = Cons,
     HashTable = HashTable,
-    Aux = Aux,
-    Function = Function,
-    Method = Method,
+    Auxiliary = Auxiliary,
     GenericFunction = GenericFunction,
+    Method = Method,
+    Function = Function,
+    BuiltinFunction = BuiltinFunction,
     Null = Null,
     Class = Class,
     StandardObject = StandardObject,

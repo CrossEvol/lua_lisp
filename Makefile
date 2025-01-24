@@ -30,7 +30,7 @@ tsc:
 	$(TSC) -f $(file)
 
 # Run all tests
-test: example_spec
+test: lexer_spec
 	@echo "All tests completed"
 
 # Pattern rule for test files

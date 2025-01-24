@@ -1,14 +1,14 @@
-local KEYWORDS = {
-    DEF_CLASS = "defclass",
-    DEF_CONSTANT = "defconstant",
-    DEF_GENERIC = "defgeneric",
-    DEF_METHOD = "defmethod",
-    DEF_PARAMETER = "defparameter",
+KEYWORDS = {
+    DEFCLASS = "defclass",
+    DEFCONSTANT = "defconstant",
+    DEFGENERIC = "defgeneric",
+    DEFMETHOD = "defmethod",
+    DEFPARAMETER = "defparameter",
     DEFUN = "defun",
-    DEF_VAR = "defvar",
+    DEFVAR = "defvar",
     DO = "do",
     DOLIST = "dolist",
-    dOTIMES = "dotimes",
+    DOTIMES = "dotimes",
     IF = "if",
     LAMBDA = "lambda",
     LET = "let",
@@ -19,7 +19,7 @@ local KEYWORDS = {
     NIL = "NIL",
 }
 
-local TokenType = {
+TokenType = {
     -- non keywords
     LPAREN = '(',
     RPAREN = ')',
@@ -41,18 +41,20 @@ local TokenType = {
     FLOAT = 'FLOAT',
     RATIONAL = 'Rational',
     ID = 'ID',
+    CHARACTER = 'CHARACTER',
+    STRING = 'STRING',
 
-    -- keywords
-    DEF_CLASS = "defclass",
-    DEF_CONSTANT = "defconstant",
-    DEF_GENERIC = "defgeneric",
-    DEF_METHOD = "defmethod",
-    DEF_PARAMETER = "defparameter",
+    -- keywords , keyword is kind of ID
+    DEFCLASS = "defclass",
+    DEFCONSTANT = "defconstant",
+    DEFGENERIC = "defgeneric",
+    DEFMETHOD = "defmethod",
+    DEFPARAMETER = "defparameter",
     DEFUN = "defun",
-    DEF_VAR = "defvar",
+    DEFVAR = "defvar",
     DO = "do",
     DOLIST = "dolist",
-    dOTIMES = "dotimes",
+    DOTIMES = "dotimes",
     IF = "if",
     LAMBDA = "lambda",
     LET = "let",

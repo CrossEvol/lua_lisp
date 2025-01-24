@@ -1,23 +1,158 @@
-BuiltInFunction = {}
+-- equivalent to the meaning of builtin function, just for preventing naming conflict
+NativeMethod = {}
 
-local BUILT_IN_FUNCTION = {
-    PRINT = function()
-
-    end,
-
-    APPLY = function()
-
-    end,
-
-    FUNCCALL = function()
-
-    end,
+local BUILT_IN_FUNCTION_NAME_SET = {
+    ["make-instance"]     = 'make-instance',
+    ["setf"]              = 'setf',
+    ["format"]            = 'format',
+    ["class-of"]          = 'class-of',
+    ["type-of"]           = 'type-of',
+    ["find-class"]        = 'find-class',
+    ["class-name"]        = 'class-name',
+    ["typep"]             = 'typep',
+    ["cons"]              = 'cons',
+    ["lambda"]            = 'lambda',
+    ["funcall"]           = 'funcall',
+    ["apply"]             = 'apply',
+    ["list"]              = 'list',
+    ["print"]             = 'print',
+    ["+"]                 = '+',
+    ["-"]                 = '-',
+    ["*"]                 = '*',
+    ["/"]                 = '/',
+    ["="]                 = '=',
+    ["/="]                = '/=',
+    ["<"]                 = '<',
+    [">"]                 = '>',
+    ["<="]                = '<=',
+    [">="]                = '>=',
+    ["eq"]                = 'eq',
+    ["eql"]               = 'eql',
+    ["equal"]             = 'equal',
+    ["map"]               = 'map',
+    ["mapcar"]            = 'mapcar',
+    ["make-hash-table"]   = 'make-hash-table',
+    ["gethash"]           = 'gethash',
+    ["remhash"]           = 'remhash',
+    ["maphash"]           = 'maphash',
+    ["append"]            = 'append',
+    ["car"]               = 'car',
+    ["cdr"]               = 'cdr',
+    ["find"]              = 'find',
+    ["first"]             = 'first',
+    ["last"]              = 'last',
+    ["length"]            = 'length',
+    ["member"]            = 'member',
+    ["position"]          = 'position',
+    ["push"]              = 'push',
+    ["rest"]              = 'rest',
+    ["reverse"]           = 'reverse',
+    ["issqrt"]            = 'issqrt',
+    ["random"]            = 'random',
+    ["ceiling"]           = 'ceiling',
+    ["floor"]             = 'floor',
+    ["round"]             = 'round',
+    ["truncate"]          = 'truncate',
+    ["subtypep"]          = 'subtypep',
+    ["make-string"]       = 'make-string',
+    ["string-upcase"]     = 'string-upcase',
+    ["string-downcase"]   = 'string-downcase',
+    ["string-capitalize"] = 'string-capitalize',
+    ["aref"]              = 'aref',
+    ["elt"]               = 'elt',
+    ["char"]              = 'char',
+    ["concatenate"]       = 'concatenate',
+    ["remove"]            = 'remove',
+    ["subseq"]            = 'subseq',
+    ["substitute"]        = 'substitute',
+    ["symbol-name"]       = 'symbol-name',
+    ["string"]            = 'string',
+    ["string-trim"]       = 'string-trim',
+    ["string-left-trim"]  = 'string-left-trim',
+    ["string-right-trim"] = 'string-right-trim',
 }
 
-function BuiltInFunction:find(name)
+
+
+local BUILT_IN_FUNCTION = {
+    ["make-instance"]     = function(...) end,
+    ["setf"]              = function(...) end,
+    ["format"]            = function(...) end,
+    ["class-of"]          = function(...) end,
+    ["type-of"]           = function(...) end,
+    ["find-class"]        = function(...) end,
+    ["class-name"]        = function(...) end,
+    ["typep"]             = function(...) end,
+    ["cons"]              = function(...) end,
+    ["lambda"]            = function(...) end,
+    ["funcall"]           = function(...) end,
+    ["apply"]             = function(...) end,
+    ["list"]              = function(...) end,
+    ["print"]             = function(...) end,
+    ["+"]                 = function(...) end,
+    ["-"]                 = function(...) end,
+    ["*"]                 = function(...) end,
+    ["/"]                 = function(...) end,
+    ["="]                 = function(...) end,
+    ["/="]                = function(...) end,
+    ["<"]                 = function(...) end,
+    [">"]                 = function(...) end,
+    ["<="]                = function(...) end,
+    [">="]                = function(...) end,
+    ["eq"]                = function(...) end,
+    ["eql"]               = function(...) end,
+    ["equal"]             = function(...) end,
+    ["map"]               = function(...) end,
+    ["mapcar"]            = function(...) end,
+    ["make-hash-table"]   = function(...) end,
+    ["gethash"]           = function(...) end,
+    ["remhash"]           = function(...) end,
+    ["maphash"]           = function(...) end,
+    ["append"]            = function(...) end,
+    ["car"]               = function(...) end,
+    ["cdr"]               = function(...) end,
+    ["find"]              = function(...) end,
+    ["first"]             = function(...) end,
+    ["last"]              = function(...) end,
+    ["length"]            = function(...) end,
+    ["member"]            = function(...) end,
+    ["position"]          = function(...) end,
+    ["push"]              = function(...) end,
+    ["rest"]              = function(...) end,
+    ["reverse"]           = function(...) end,
+    ["issqrt"]            = function(...) end,
+    ["random"]            = function(...) end,
+    ["ceiling"]           = function(...) end,
+    ["floor"]             = function(...) end,
+    ["round"]             = function(...) end,
+    ["truncate"]          = function(...) end,
+    ["subtypep"]          = function(...) end,
+    ["make-string"]       = function(...) end,
+    ["string-upcase"]     = function(...) end,
+    ["string-downcase"]   = function(...) end,
+    ["string-capitalize"] = function(...) end,
+    ["aref"]              = function(...) end,
+    ["elt"]               = function(...) end,
+    ["char"]              = function(...) end,
+    ["concatenate"]       = function(...) end,
+    ["remove"]            = function(...) end,
+    ["subseq"]            = function(...) end,
+    ["substitute"]        = function(...) end,
+    ["symbol-name"]       = function(...) end,
+    ["string"]            = function(...) end,
+    ["string-trim"]       = function(...) end,
+    ["string-left-trim"]  = function(...) end,
+    ["string-right-trim"] = function(...) end,
+}
+
+function NativeMethod:find(name)
     return BUILT_IN_FUNCTION[name]
 end
 
+function NativeMethod:exists(name)
+    return BUILT_IN_FUNCTION_NAME_SET[name] ~= nil
+end
+
 return {
-    BuiltInFunction = BuiltInFunction
+    NativeMethod = NativeMethod
 }
