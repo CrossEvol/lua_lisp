@@ -1,4 +1,5 @@
-KEYWORDS = {
+---@class KEYWORDS
+local KEYWORDS = {
     DEFCLASS = "defclass",
     DEFCONSTANT = "defconstant",
     DEFGENERIC = "defgeneric",
@@ -10,7 +11,11 @@ KEYWORDS = {
     DOLIST = "dolist",
     DOTIMES = "dotimes",
     IF = "if",
+    FOR = "for",
+    IN = "in",
+    COLLECT = "collect",
     LAMBDA = "lambda",
+    MAP = "map",
     LET = "let",
     LOOP = "loop",
     WHEN = "when",
@@ -19,7 +24,32 @@ KEYWORDS = {
     NIL = "NIL",
 }
 
-TokenType = {
+---@alias KEYWORDS.Type
+---| '"defclass"'
+---| '"defconstant"'
+---| '"defgeneric"'
+---| '"defmethod"'
+---| '"defparameter"'
+---| '"defun"'
+---| '"defvar"'
+---| '"do"'
+---| '"dolist"'
+---| '"dotimes"'
+---| '"if"'
+---| '"for"'
+---| '"in"'
+---| '"collect"'
+---| '"lambda"'
+---| '"map"'
+---| '"let"'
+---| '"loop"'
+---| '"when"'
+---| '"AND"'
+---| '"T"'
+---| '"NIL"'
+
+---@class TokenType
+local TokenType = {
     -- non keywords
     LPAREN = '(',
     RPAREN = ')',
@@ -56,7 +86,11 @@ TokenType = {
     DOLIST = "dolist",
     DOTIMES = "dotimes",
     IF = "if",
+    FOR = "for",
+    IN = "in",
+    COLLECT = "collect",
     LAMBDA = "lambda",
+    MAP = "map",
     LET = "let",
     LOOP = "loop",
     WHEN = "when",
@@ -65,6 +99,51 @@ TokenType = {
     NIL = "NIL",
 }
 
+---@alias TokenType.Type
+---| '"("'
+---| '")"'
+---| '":"'
+---| '";"'
+---| '"/"'
+---| '"\'"'
+---| '""'
+---| '"#"'
+---| '"-"'
+---| '"+"'
+---| '"E"'
+---| '"\\'
+---| '"*"'
+---| '"."'
+---| '"EOF"'
+---| '"NUMBER"'
+---| '"INTEGER"'
+---| '"FLOAT"'
+---| '"Rational"'
+---| '"ID"'
+---| '"CHARACTER"'
+---| '"STRING"'
+---| '"defclass"'
+---| '"defconstant"'
+---| '"defgeneric"'
+---| '"defmethod"'
+---| '"defparameter"'
+---| '"defun"'
+---| '"defvar"'
+---| '"do"'
+---| '"dolist"'
+---| '"dotimes"'
+---| '"if"'
+---| '"for"'
+---| '"in"'
+---| '"collect"'
+---| '"lambda"'
+---| '"map"'
+---| '"let"'
+---| '"loop"'
+---| '"when"'
+---| '"AND"'
+---| '"T"'
+---| '"NIL"'
 
 
 return {

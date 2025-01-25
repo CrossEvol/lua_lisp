@@ -3,24 +3,25 @@ local TokenType = require("src.token_type").TokenType
 local KEYWORDS = require("src.token_type").KEYWORDS
 local LexerError = require("src.exception")
 
--- @param ch : char
--- @return -> boolean
+---@param ch string
+---@return boolean
 local function isDigit(ch)
     -- The pattern "%d" matches any digit character (0-9)
     return string.match(ch, "^%d$") ~= nil
 end
 
--- @param ch : char
--- @return -> boolean
+---@param ch string
+---@return boolean
 local function isDigit1To9(ch)
     -- The pattern "[1-9]" matches any digit character from 1 to 9
     return string.match(ch, "^[1-9]$") ~= nil
 end
 
--- @field text : string = ""
--- @field position : int = 1
--- @field lineNo : int = 1
--- @field columnNO : int = 1
+---@class Lexer
+---@field text string
+---@field position integer
+---@field lineNo integer
+---@field columnNO integer
 Lexer = {
     text = [[]],
     position = 1,
@@ -28,6 +29,8 @@ Lexer = {
     columnNo = 1,
 }
 
+---@param o table
+---@return Lexer
 function Lexer:new(o)
     o = o or {}
     self.__index = self
@@ -35,24 +38,29 @@ function Lexer:new(o)
     return o
 end
 
+---@return string
 function Lexer:currentChar()
     return self.text:sub(self.position, self.position)
 end
 
+---@return string
 function Lexer:nextChar()
     return self.text:sub(self.position + 1, self.position + 1)
 end
 
+---@return boolean
 local function isSpace(ch)
     return ch == ' ' or ch == '\n' or ch == '\r' or ch == '\b' or ch == '\t' or ch == '\v' or ch == '\f'
 end
 
+---@return nil
 function Lexer:skipWhiteSpace()
     while isSpace(self:currentChar()) do
         self:advance()
     end
 end
 
+---@return nil
 function Lexer:advance()
     if self:currentChar() == '\n' then
         self.lineNo = self.lineNo + 1
@@ -62,6 +70,7 @@ function Lexer:advance()
     self.columnNo = self.columnNo + 1
 end
 
+---@return nil
 function Lexer:skipComment()
     while self:currentChar() ~= '\n' do
         self:advance()
@@ -69,15 +78,18 @@ function Lexer:skipComment()
     self:advance()
 end
 
--- @field position : int = 1
--- @field lineNo : int = 1
--- @field columnNo : int = 1
+---@class State
+---@field position integer
+---@field lineNo integer
+---@field columnNo integer
 State = {
     position = 1,
     lineNo = 0,
     columnNo = 0,
 }
 
+---@param o table
+---@return State
 function State:new(o)
     o = o or {}
     self.__index = self
@@ -85,6 +97,7 @@ function State:new(o)
     return o
 end
 
+---@return Token
 function Lexer:peek()
     local state = State:new({ position = self.position, lineNo = self.lineNo, columnNo = self.columnNo })
     local token = self:nextToken()
@@ -92,11 +105,13 @@ function Lexer:peek()
     return token
 end
 
--- @param state : state contains previous position, lineNo, columnNo
+---@param state State
+---@return nil
 function Lexer:revert(state)
     self:revert(state)
 end
 
+---@return Token
 function Lexer:number()
     local numberString = ''
     local isFloat = false
@@ -227,6 +242,7 @@ function Lexer:number()
     })
 end
 
+---@return Token
 function Lexer:characterConstant()
     local str = ''
     str = str .. self:currentChar()
@@ -247,6 +263,7 @@ function Lexer:characterConstant()
     })
 end
 
+---@return Token
 function Lexer:stringConstant()
     local str = ''
     str = str .. self:currentChar()
@@ -262,13 +279,14 @@ function Lexer:stringConstant()
     self:advance()
     return Token:new({
         type = TokenType.STRING,
-        value = SIMPLE_BASE_STRING:new({ stringValue = str }),
+        value = SimpleBaseString:new({ stringValue = str }),
         lineNo = self.lineNo,
         columnNo =
             self.columnNo
     })
 end
 
+---@return Token
 function Lexer:identifier()
     local str = ''
     while self:currentChar() ~= '' and self:currentChar() ~= ' ' do
@@ -296,6 +314,7 @@ function Lexer:identifier()
     })
 end
 
+---@return Token
 function Lexer:nextToken()
     while true do
         if isSpace(self:currentChar()) then

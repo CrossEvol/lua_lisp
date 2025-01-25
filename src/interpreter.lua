@@ -1,7 +1,10 @@
+---@class Interpreter
 Interpreter = {
 
 }
 
+---@param o table
+---@return Interpreter
 function Interpreter:new(o)
     o = o or {}
     self.__index = self

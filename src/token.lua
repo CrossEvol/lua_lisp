@@ -1,16 +1,20 @@
 local Value = require("src.builtin_class").Value
+local TokenType = require("src.token_type").TokenType
 
--- @field type : TokenType
--- @field value : Value
--- @field lineNo : int = 0
--- @field columnNo : int = 0
+---@class Token
+---@field type  TokenType.Type
+---@field value  T
+---@field lineNo integer
+---@field columnNo integer
 Token = {
-    type = nil,
-    value = Value:new(),
+    type = TokenType.EOF,
+    value = Value:new({}),
     lineNo = 0,
     columnNo = 0,
 }
 
+---@param o table
+---@return Token
 function Token:new(o)
     o = o or {}
     self.__index = self

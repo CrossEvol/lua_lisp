@@ -1,12 +1,30 @@
--- @field type : ErrorType
--- @field lineNo : int = 0
--- @field columnNo : int = 0
+---@class ErrorType
+local ErrorType = {
+    LexerError = "LexerError",
+    ParserError = "ParserError",
+    InterpreterError = "InterpreterError",
+    UnknownError = "UnknownError",
+}
+
+---@alias ErrorType.Type
+---| '"LexerError"'
+---| '"ParserError"'
+---| '"InterpreterError"'
+---| '"UnknownError"'
+
+---@class Error
+---@field type ErrorType.Type
+---@field lineNo integer
+---@field columnNo integer
 Error = {
-    type = nil,
+    type = ErrorType.UnknownError,
     lineNo = 0,
     columnNo = 0,
 }
 
+
+---@param o table
+---@return Error
 function Error:new(o)
     o = o or {}
     self.__index = self
@@ -14,19 +32,13 @@ function Error:new(o)
     return o
 end
 
-local ErrorType = {
-    LexerError = "LexerError",
-    ParserError = "ParserError",
-    InterpreterError = "InterpreterError",
-}
-
--- @field type : ErrorType = LexerError
+---@class LexerError : Error
 LexerError = Error:new({ type = ErrorType.LexerError })
 
--- @field type : ErrorType = ParserError
+---@class ParserError : Error
 ParserError = Error:new({ type = ErrorType.ParserError })
 
--- @field type : ErrorType = InterpreterError
+---@class InterpreterError : Error
 InterpreterError = Error:new({ type = ErrorType.InterpreterError })
 
 return {

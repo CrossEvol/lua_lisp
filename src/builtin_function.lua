@@ -1,6 +1,8 @@
--- equivalent to the meaning of builtin function, just for preventing naming conflict
+---equivalent to the meaning of builtin function, just for preventing naming conflict
+---@class NativeMethod
 NativeMethod = {}
 
+---@class BUILT_IN_FUNCTION_NAME_SET
 local BUILT_IN_FUNCTION_NAME_SET = {
     ["make-instance"]     = 'make-instance',
     ["setf"]              = 'setf',
@@ -72,8 +74,7 @@ local BUILT_IN_FUNCTION_NAME_SET = {
     ["string-right-trim"] = 'string-right-trim',
 }
 
-
-
+---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
     ["make-instance"]     = function(...) end,
     ["setf"]              = function(...) end,
@@ -145,10 +146,16 @@ local BUILT_IN_FUNCTION = {
     ["string-right-trim"] = function(...) end,
 }
 
+--- Find a built-in function by name
+---@param name string The name of the built-in function
+---@return function|nil The built-in function, or nil if not found
 function NativeMethod:find(name)
     return BUILT_IN_FUNCTION[name]
 end
 
+--- Check if a built-in function exists by name
+---@param name string The name of the built-in function
+---@return boolean True if the function exists, false otherwise
 function NativeMethod:exists(name)
     return BUILT_IN_FUNCTION_NAME_SET[name] ~= nil
 end

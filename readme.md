@@ -1,3 +1,6 @@
+# Doc
+token.value → AST.value
+
 # TODO
 should the builtin functions has the same level as keywords?
 Functions should be put in the function pool, the builtin function will be loaded when the program started, but the custom function will be pushed into the pool by developer later.
