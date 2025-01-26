@@ -52,4 +52,18 @@ describe("Parser tests", function()
             assert_equal(ast.value.name, '__a__')
         end)
     end)
+
+    it("this is a funcCall ast", function()
+        TEST_NEXT_AST(
+            [[(print a)]],
+            AST.FunctionCall:new({
+                value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
+            }),
+            function(ast)
+                assert_equal(#ast.params, 1)
+                assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
+                assert_equal(ast.params[1].value.name, 'a')
+            end)
+    end)
 end)

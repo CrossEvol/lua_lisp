@@ -35,7 +35,7 @@ end
 
 ---@return Token
 function Parser:peek()
-    local token = self:peek()
+    local token = self.lexer:peek()
     return token
 end
 
@@ -163,16 +163,17 @@ end
         SHARP | SINGLE_QUOTE
 
 --]]
---- @return AST
+--- @return Expr
 function Parser:parse()
+    self:advance() -- init the token
     local node = self:expr()
-    if self:currentToken().type == TokenType.EOF then
+    if self:currentToken().type ~= TokenType.EOF then
         error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
     end
     return node
 end
 
---- @return AST
+--- @return Expr
 function Parser:expr()
     if self:currentToken().type == TokenType.LPAREN then
         local nextTokenType = self:peek().type
@@ -236,101 +237,116 @@ function Parser:params()
     return params
 end
 
---- @return AST
+--- @return Expr
 function Parser:variableDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:letDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:lambdaDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:funcDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:classDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:slotDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:methodDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:genericDeclaration()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:funCall()
-    return {}
+    self:consume(TokenType.LPAREN)
+    local value = self:currentToken().value
+    self:consume(TokenType.ID)
+    local params = {}
+    while self:currentToken().type ~= TokenType.RPAREN do
+        local param = self:expr()
+        table.insert(params, param)
+    end
+    self:consume(TokenType.RPAREN)
+    local funCall = AST.FunctionCall:new({ value = value, params = params })
+    return funCall
 end
 
---- @return AST
+--- @return Expr
 function Parser:ifCall()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:loopCall()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:mapCall()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:doListCall()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:doTimesCall()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:lambdaCall()
     return {}
 end
 
----@return AST
+---@return Expr
 function Parser:factor()
-    self:advance()
     local token = self:currentToken()
     if token.type == TokenType.INTEGER then
+        self:consume(TokenType.INTEGER)
         local node = AST.IntegerConstant:new({ value = token.value })
         return node
     elseif token.type == TokenType.FLOAT then
+        self:consume(TokenType.FLOAT)
         local node = AST.FloatConstant:new({ value = token.value })
         return node
     elseif token.type == TokenType.RATIONAL then
+        self:consume(TokenType.RATIONAL)
         local node = AST.RationalConstant:new({ value = token.value })
         return node
     elseif token.type == TokenType.CHARACTER then
+        self:consume(TokenType.CHARACTER)
         local node = AST.CharacterConstant:new({ value = token.value })
         return node
     elseif token.type == TokenType.STRING then
+        self:consume(TokenType.STRING)
         local node = AST.StringConstant:new({ value = token.value })
         return node
     elseif token.type == TokenType.ID then
+        self:consume(TokenType.ID)
         local node = AST.Variable:new({ value = token.value })
         return node
     else
@@ -338,12 +354,12 @@ function Parser:factor()
     end
 end
 
---- @return AST
+--- @return Expr
 function Parser:variable()
     return {}
 end
 
---- @return AST
+--- @return Expr
 function Parser:symbol()
     return {}
 end

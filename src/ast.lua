@@ -69,6 +69,15 @@ end
 ---@class Expr : AST
 Expr = AST:new({ astType = AST_TYPE.EXPR })
 
+---@param o table
+---@return Expr
+function Expr:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
 ---@class Constant : Expr
 Constant = Expr:new({ astType = AST_TYPE.CONSTANT })
 
@@ -100,7 +109,9 @@ Variable = Expr:new({ astType = AST_TYPE.VARIABLE })
 Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
 
 ---@class FunctionCall : Expr
-FunctionCall = Expr:new({ astType = AST_TYPE.FUNCTION_CALL })
+---@field value Function
+---@field params table<Expr, integer>
+FunctionCall = Expr:new({ astType = AST_TYPE.FUNCTION_CALL, params = {} })
 
 ---@class Lambda : Expr
 Lambda = Expr:new({ astType = AST_TYPE.LAMBDA })
@@ -113,6 +124,7 @@ ControlExpr = Expr:new({ astType = AST_TYPE.CONTROL_EXPR })
 
 return {
     AST = AST,
+    AST_TYPE = AST_TYPE,
     Expr = Expr,
     Constant = Constant,
     NumberConstant = NumberConstant,
@@ -123,4 +135,5 @@ return {
     StringConstant = StringConstant,
     Declaration = Declaration,
     Variable = Variable,
+    FunctionCall = FunctionCall,
 }

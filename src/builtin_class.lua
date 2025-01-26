@@ -93,14 +93,14 @@ Method = T:new({ classType = BUILT_IN_CLASS.METHOD, })
 ---@class Null : T
 Null = T:new({ classType = BUILT_IN_CLASS.NULL, })
 
+---include user-defined function and builtin function, builtin should have preference than user-defined
 ---@class Function : T
-Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, })
-
----@class BuiltinFunction : T
 ---@field func function
-BuiltinFunction = T:new({
+Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, func = function() end })
+
+---@class BuiltinFunction : Function
+BuiltinFunction = Function:new({
     classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION,
-    func = function() end
 })
 
 ---@class Symbol : T

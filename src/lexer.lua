@@ -19,11 +19,26 @@ local function isDigit1To9(ch)
     return string.match(ch, "^[1-9]$") ~= nil
 end
 
+---@param ch string
+---@return boolean
+local function isAlphabet(ch)
+    -- The pattern "[a-zA-Z]" matches any alphabet character from a to z or A to Z
+    return string.match(ch, "^[a-zA-Z]$") ~= nil
+end
+
+---@param ch string
+---@return boolean
+local function isSpecialCharacter(ch)
+    -- The pattern "^[-+_*<>=/]$" matches any of the specified special characters
+    return string.match(ch, "^[-+_*<>=/]$") ~= nil
+end
+
+
 ---@class Lexer
 ---@field text string
 ---@field position integer
 ---@field lineNo integer
----@field columnNO integer
+---@field columnNo integer
 Lexer = {
     text = [[]],
     position = 1,
@@ -103,6 +118,8 @@ end
 function Lexer:peek()
     local state = State:new({ position = self.position, lineNo = self.lineNo, columnNo = self.columnNo })
     local token = self:nextToken()
+    self:advance()
+    token = self:nextToken()
     self:revert(state)
     return token
 end
@@ -110,7 +127,9 @@ end
 ---@param state State
 ---@return nil
 function Lexer:revert(state)
-    self:revert(state)
+    self.position = state.position
+    self.lineNo = state.lineNo
+    self.columnNo = state.columnNo
 end
 
 ---In common lisp, '1_a' can be seen as identifier, which is departure from other language like c whose variable name must start with '_' or alphabet. I do not want to implement the full lisp, so I stick to the convention of modern language.
@@ -257,6 +276,7 @@ function Lexer:characterConstant()
         self:advance()
     end
     str = str .. self:currentChar()
+    self:advance()
     return Token:new({
         type = TokenType.CHARACTER,
         value = Character:new({ chars = str }),
@@ -290,7 +310,7 @@ end
 ---@return Token
 function Lexer:identifier()
     local str = ''
-    while self:currentChar() ~= '' and self:currentChar() ~= ' ' do
+    while isAlphabet(self:currentChar()) or isSpecialCharacter(self:currentChar()) or isDigit(self:currentChar()) do
         str = str .. self:currentChar()
         self:advance()
     end
@@ -334,35 +354,43 @@ function Lexer:nextToken()
         elseif isDigit(self:currentChar()) then
             return self:number()
         elseif self:currentChar() == TokenType.LPAREN then
-            return Token:new({
+            local token = Token:new({
                 type = TokenType.LPAREN,
                 value = Auxiliary:new({}),
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
+            self:advance()
+            return token
         elseif self:currentChar() == TokenType.RPAREN then
-            return Token:new({
+            local token = Token:new({
                 type = TokenType.RPAREN,
                 value = Auxiliary:new({}),
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
+            self:advance()
+            return token
         elseif self:currentChar() == TokenType.COLON then
-            return Token:new({
+            local token = Token:new({
                 type = TokenType.COLON,
                 value = Auxiliary:new({}),
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
+            self:advance()
+            return token
         elseif self:currentChar() == TokenType.NEGATIVE then
             if self:nextChar() == ' ' then
-                return Token:new({
+                local token = Token:new({
                     type = TokenType.NEGATIVE,
                     value = Function:new({}),
                     lineNo = self.lineNo,
                     columnNo =
                         self.columnNo
                 })
+                self:advance()
+                return token
             elseif isDigit(self:nextChar()) then
                 return self:number()
             else
@@ -370,13 +398,15 @@ function Lexer:nextToken()
             end
         elseif self:currentChar() == TokenType.POSITIVE then
             if self:nextChar() == ' ' then
-                return Token:new({
+                local token = Token:new({
                     type = TokenType.POSITIVE,
                     value = Function:new({}),
                     lineNo = self.lineNo,
                     columnNo =
                         self.columnNo
                 })
+                self:advance()
+                return token
             elseif isDigit(self:nextChar()) then
                 return self:number()
             else
@@ -386,23 +416,27 @@ function Lexer:nextToken()
             if self:nextChar() == [[\]] then
                 return self:characterConstant()
             end
-            return Token:new({
+            local token = Token:new({
                 type = TokenType.SHARP,
                 value = Auxiliary:new({}),
                 lineNo = self.lineNo,
                 columnNo =
                     self.columnNo
             })
+            self:advance()
+            return token
         elseif self:currentChar() == TokenType.SEMI then
             self:skipComment()
         elseif self:currentChar() == TokenType.SINGLE_QUOTE then
-            return Token:new({
+            local token = Token:new({
                 type = TokenType.SINGLE_QUOTE,
                 value = Auxiliary:new({}),
                 lineNo = self.lineNo,
                 columnNo =
                     self.columnNo
             })
+            self:advance()
+            return token
         elseif self:currentChar() == TokenType.DOUBLE_QUOTE then
             return self:stringConstant()
         elseif self:currentChar() ~= '' then
