@@ -8,5 +8,6 @@ but the function in common lisp, have the same formula as the keyword
 `(defvar a 1)`
 `(class-of a)`
 deal with them in the same way is reasonable.
+maybe should recognize keyword like 'defclass' , 'defmethod' as builtin function ?
 
     

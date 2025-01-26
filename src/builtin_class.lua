@@ -22,7 +22,7 @@ local BUILT_IN_CLASS = {
     ARRAY = 'Array',
     CONS = 'Cons',
     HASH_TABLE = 'HashTable',
-    AUX = 'Aux',
+    AUXILIARY = 'Auxiliary',
     VALUE = 'Value',
 }
 
@@ -49,7 +49,7 @@ local BUILT_IN_CLASS = {
 ---| '"Array"'
 ---| '"Cons"'
 ---| '"HashTable"'
----| '"Aux"'
+---| '"Auxiliary"'
 ---| '"Value"'
 
 ---@class T
@@ -97,10 +97,15 @@ Null = T:new({ classType = BUILT_IN_CLASS.NULL, })
 Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, })
 
 ---@class BuiltinFunction : T
-BuiltinFunction = T:new({ classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION, })
+---@field func function
+BuiltinFunction = T:new({
+    classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION,
+    func = function() end
+})
 
 ---@class Symbol : T
-Symbol = T:new({ classType = BUILT_IN_CLASS.SYMBOL, })
+---@field name string
+Symbol = T:new({ classType = BUILT_IN_CLASS.SYMBOL, name = "" })
 
 ---@class Number : T
 Number = T:new({ classType = BUILT_IN_CLASS.NUMBER, })
@@ -125,10 +130,12 @@ SingleFloat = Number:new({ classType = BUILT_IN_CLASS.SINGLE_FLOAT, floatValue =
 Rational = Number:new({ classType = BUILT_IN_CLASS.RATIONAL, numerator = 0, denominator = 1 })
 
 ---@class Character : T
-Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, })
+---@field chars string
+Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, chars = '' })
 
 ---@class String : T
-String = T:new({ classType = BUILT_IN_CLASS.STRING, })
+---@field stringValue string
+String = T:new({ classType = BUILT_IN_CLASS.STRING, stringValue = '' })
 
 ---@class SimpleBaseString : T
 ---@field stringValue string
@@ -144,7 +151,7 @@ Cons = Array:new({ classType = BUILT_IN_CLASS.CONS, })
 HashTable = T:new({ classType = BUILT_IN_CLASS.HASH_TABLE, })
 
 ---@class Auxiliary : T
-Auxiliary = T:new({ classType = BUILT_IN_CLASS.AUX, })
+Auxiliary = T:new({ classType = BUILT_IN_CLASS.AUXILIARY, })
 
 ---@class Value : T
 ---@field value any
@@ -158,6 +165,7 @@ return {
     FixNum = FixNum,
     Integer = Integer,
     Float = Float,
+    SingleFloat = SingleFloat,
     Rational = Rational,
     Symbol = Symbol,
     Character = Character,
@@ -174,5 +182,6 @@ return {
     Class = Class,
     StandardObject = StandardObject,
     StructureObject = StructureObject,
+    SimpleBaseString = SimpleBaseString,
     BUILT_IN_CLASS = BUILT_IN_CLASS,
 }

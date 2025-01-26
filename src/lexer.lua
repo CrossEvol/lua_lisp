@@ -2,6 +2,8 @@ local Token = require("src.token").Token
 local TokenType = require("src.token_type").TokenType
 local KEYWORDS = require("src.token_type").KEYWORDS
 local LexerError = require("src.exception")
+local NativeMethod = require("src.builtin_function").NativeMethod
+local BuiltinClassModule = require("src.builtin_class")
 
 ---@param ch string
 ---@return boolean
@@ -111,6 +113,7 @@ function Lexer:revert(state)
     self:revert(state)
 end
 
+---In common lisp, '1_a' can be seen as identifier, which is departure from other language like c whose variable name must start with '_' or alphabet. I do not want to implement the full lisp, so I stick to the convention of modern language.
 ---@return Token
 function Lexer:number()
     local numberString = ''
@@ -266,7 +269,6 @@ end
 ---@return Token
 function Lexer:stringConstant()
     local str = ''
-    str = str .. self:currentChar()
     self:advance()
     while self:currentChar() ~= '"' do
         if self:currentChar() == '' then
@@ -275,7 +277,6 @@ function Lexer:stringConstant()
         str = str .. self:currentChar()
         self:advance()
     end
-    str = str .. self:currentChar()
     self:advance()
     return Token:new({
         type = TokenType.STRING,
@@ -304,6 +305,17 @@ function Lexer:identifier()
                 self.columnNo
         })
     end
+
+    if NativeMethod:exists(str) then
+        return Token:new({
+            type = TokenType.ID,
+            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find(str) }),
+            lineNo = self.lineNo,
+            columnNo =
+                self.columnNo
+        })
+    end
+
 
     return Token:new({
         type = TokenType.ID,

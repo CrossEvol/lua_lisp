@@ -150,14 +150,14 @@ local BUILT_IN_FUNCTION = {
 ---@param name string The name of the built-in function
 ---@return function|nil The built-in function, or nil if not found
 function NativeMethod:find(name)
-    return BUILT_IN_FUNCTION[name]
+    return BUILT_IN_FUNCTION[name:lower()]
 end
 
 --- Check if a built-in function exists by name
 ---@param name string The name of the built-in function
 ---@return boolean True if the function exists, false otherwise
 function NativeMethod:exists(name)
-    return BUILT_IN_FUNCTION_NAME_SET[name] ~= nil
+    return BUILT_IN_FUNCTION_NAME_SET[name:lower()] ~= nil
 end
 
 return {

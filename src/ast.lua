@@ -94,8 +94,7 @@ StringConstant = Constant:new({ astType = AST_TYPE.STRING_CONSTANT })
 Declaration = Expr:new({ astType = AST_TYPE.DECLARATION })
 
 ---@class Variable : Expr
----@field name string
-Variable = Expr:new({ astType = AST_TYPE.VARIABLE, name = "" })
+Variable = Expr:new({ astType = AST_TYPE.VARIABLE })
 
 ---@class Definition : Expr
 Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
