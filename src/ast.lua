@@ -3,6 +3,7 @@ local VALUE = require("src.builtin_class")
 ---@class AST_TYPE
 local AST_TYPE = {
     AST = "AST",
+    PROGRAM = "PROGRAM",
     EXPR = "Expr",
     CONSTANT = "Constant",
     NUMBER_CONSTANT = "NumberConstant",
@@ -22,6 +23,7 @@ local AST_TYPE = {
 
 ---@alias AST_TYPE.Type
 ---| '"AST"'
+---| '"PROGRAM"'
 ---| '"Expr"'
 ---| '"Constant"'
 ---| '"NumberConstant"'
@@ -72,6 +74,19 @@ Expr = AST:new({ astType = AST_TYPE.EXPR })
 ---@param o table
 ---@return Expr
 function Expr:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---@class Program : AST
+---@field expressions  table<Expr, integer>
+Program = AST:new({ astType = AST_TYPE.PROGRAM, expressions = {} })
+
+---@param o table
+---@return Program
+function Program:new(o)
     o = o or {}
     self.__index = self
     setmetatable(o, self)

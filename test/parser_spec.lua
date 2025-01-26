@@ -11,7 +11,8 @@ describe("Parser tests", function()
         TEST_NEXT_AST = function(text, expect, func)
             local lexer = Lexer:new({ text = text })
             local parser = Parser:new({ lexer = lexer })
-            local ast = parser:parse()
+            local program = parser:parse()
+            local ast = program.expressions[1]
             assert_equal(ast.astType, expect.astType)
             assert_equal(ast.value.classType, expect.value.classType)
             if func ~= nil then

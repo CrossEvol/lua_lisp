@@ -1,5 +1,17 @@
 --[[
+    program:
+        (expr)*
+
     expr :
+        declaration | funCall | lambdaCall | ifCall | loopCall | mapCall | doListCall | doTimesCall | factor
+
+    block :
+        (expr)*
+
+    params :
+        LPAREN (ID)* RPAREN
+
+    declaration :
           variableDeclaration
         | letDeclaration
         | funcDeclaration
@@ -7,22 +19,6 @@
         | methodDeclaration
         | genericDeclaration
         | lambdaDeclaration
-        | funCall
-        | lambdaCall
-        | ifCall
-        | loopCall
-        | mapCall
-        | doListCall
-        | doTimesCall
-        | factor
-
-    block :
-        LPAREN
-            (expr)*
-        RPAREN
-
-    params :
-        LPAREN (ID)* RPAREN
 
     variableDeclaration :
         LPAREN ( DEFCONSTANT | DEFPARAMETER | DEFVAR ) ID expr RPAREN

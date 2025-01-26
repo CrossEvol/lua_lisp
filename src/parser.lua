@@ -50,13 +50,14 @@ function Parser:consume(tokenType)
 end
 
 --[[
+    program:
+        (expr)*
+
     expr :
         declaration | funCall | lambdaCall | ifCall | loopCall | mapCall | doListCall | doTimesCall | factor
 
     block :
-        LPAREN
-            (expr)*
-        RPAREN
+        (expr)*
 
     params :
         LPAREN (ID)* RPAREN
@@ -163,14 +164,25 @@ end
         SHARP | SINGLE_QUOTE
 
 --]]
---- @return Expr
+--- @return Program
 function Parser:parse()
     self:advance() -- init the token
-    local node = self:expr()
+    local node = self:program()
     if self:currentToken().type ~= TokenType.EOF then
         error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
     end
     return node
+end
+
+--- @return Program
+function Parser:program()
+    local expressions = {}
+    while self:currentToken().type ~= TokenType.EOF do
+        local node = self:expr()
+        table.insert(expressions, node)
+    end
+    local program = Program:new({ expressions = expressions })
+    return program
 end
 
 --- @return Expr
