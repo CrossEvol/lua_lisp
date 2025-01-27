@@ -119,7 +119,6 @@ function Lexer:peek()
     local state = State:new({ position = self.position, lineNo = self.lineNo, columnNo = self.columnNo })
     local token = self:nextToken()
     self:advance()
-    token = self:nextToken()
     self:revert(state)
     return token
 end
@@ -200,7 +199,9 @@ function Lexer:number()
             end
         end
 
-        if self:currentChar() == '' or self:currentChar() == ' ' then
+        if self:currentChar() == ''
+            or self:currentChar() == ' '
+            or self:currentChar() == ')' then
             break
         elseif self:currentChar():upper() == TokenType.EXPONENT then
             isFloat = true
@@ -381,33 +382,13 @@ function Lexer:nextToken()
             self:advance()
             return token
         elseif self:currentChar() == TokenType.NEGATIVE then
-            if self:nextChar() == ' ' then
-                local token = Token:new({
-                    type = TokenType.NEGATIVE,
-                    value = Function:new({}),
-                    lineNo = self.lineNo,
-                    columnNo =
-                        self.columnNo
-                })
-                self:advance()
-                return token
-            elseif isDigit(self:nextChar()) then
+            if isDigit(self:nextChar()) then
                 return self:number()
             else
                 return self:identifier()
             end
         elseif self:currentChar() == TokenType.POSITIVE then
-            if self:nextChar() == ' ' then
-                local token = Token:new({
-                    type = TokenType.POSITIVE,
-                    value = Function:new({}),
-                    lineNo = self.lineNo,
-                    columnNo =
-                        self.columnNo
-                })
-                self:advance()
-                return token
-            elseif isDigit(self:nextChar()) then
+            if isDigit(self:nextChar()) then
                 return self:number()
             else
                 return self:identifier()

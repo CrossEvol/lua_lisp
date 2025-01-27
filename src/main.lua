@@ -116,15 +116,17 @@
 
 local Lexer = require("src.lexer").Lexer
 local Parser = require("src.parser").Parser
+local pretty = require("pl.pretty")
 
--- local text = [[1]]
--- local lexer = Lexer:new({ text = text })
--- local parser = Parser:new({ lexer = lexer })
--- local ast = parser:parse()
--- print(ast)
--- print(ast.astType)
--- print(ast.value)
--- print(ast.value.classType)
+local text = [[(custom-func)]]
+local lexer = Lexer:new({ text = text })
+local parser = Parser:new({ lexer = lexer })
+local ast = parser:parse().expressions[1]
+print(ast)
+print(ast.astType)
+print(ast.value)
+print(ast.value.classType)
+-- pretty.dump(ast)
 
 
 -- ====================================>
@@ -133,5 +135,3 @@ local Parser = require("src.parser").Parser
 -- local lexer = Lexer:new({ text = text })
 -- local token = lexer:nextToken()
 -- print(token)
-
--- ====================================>

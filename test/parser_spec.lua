@@ -4,11 +4,14 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 describe("Parser tests", function()
-    local TEST_NEXT_AST = function(text, expect, func)
+    local TEST_AST = function(text, expect, func) end
 
-    end
+    local TEST_UNARY_OPERAND_AST = function(text, expect, func) end
+
+    local TEST_BINARY_OPERANDS_AST = function(text, expect, func) end
+
     before(function()
-        TEST_NEXT_AST = function(text, expect, func)
+        TEST_AST = function(text, expect, func)
             local lexer = Lexer:new({ text = text })
             local parser = Parser:new({ lexer = lexer })
             local program = parser:parse()
@@ -19,52 +22,193 @@ describe("Parser tests", function()
                 local success, _ = pcall(func, ast)
                 assert_true(success)
             end
+            return ast
+        end
+
+        TEST_UNARY_OPERAND_AST = function(text, expect, func)
+            local success, parsedAST = pcall(TEST_AST, text, expect, function(ast)
+                assert_equal(#ast.params, 1)
+                assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
+                assert_equal(ast.params[1].value.name, 'a')
+            end)
+            assert_true(success)
+            if func ~= nil then
+                local success, _ = pcall(func, parsedAST)
+                assert_true(success)
+            end
+        end
+
+        TEST_BINARY_OPERANDS_AST = function(text, expect)
+            local success, _ = pcall(TEST_AST, text, expect, function(ast)
+                assert_equal(#ast.params, 2)
+                assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
+                assert_equal(ast.params[1].value.name, 'a')
+                assert_equal(ast.params[2].astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                assert_equal(ast.params[2].value.intValue, 1)
+            end)
+            assert_true(success)
         end
     end)
 
-    it("this is a constant ast", function()
-        TEST_NEXT_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }), function(ast)
+    it("Constant AST", function()
+        TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }), function(ast)
             assert_equal(ast.value.intValue, 1)
         end)
-        TEST_NEXT_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }),
+        TEST_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }),
             function(ast)
                 assert_equal(ast.value.floatValue, 1.0)
             end)
-        TEST_NEXT_AST([[1/2]],
+        TEST_AST([[1/2]],
             AST.RationalConstant:new({ value = VALUE.Rational:new({ numerator = 1, denominator = 2 }) }))
-        TEST_NEXT_AST([[#\A]], AST.CharacterConstant:new({ value = VALUE.Character:new({ chars = [[#\A]] }) }),
+        TEST_AST([[#\A]], AST.CharacterConstant:new({ value = VALUE.Character:new({ chars = [[#\A]] }) }),
             function(ast)
                 assert_equal(ast.value.chars, [[#\A]])
             end)
-        TEST_NEXT_AST([["1"]], AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "1" }) }),
+        TEST_AST([["1"]], AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "1" }) }),
             function(ast)
                 assert_equal(ast.value.stringValue, "1")
             end)
     end)
 
-    it("this is a variable ast", function()
-        TEST_NEXT_AST([[a]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }), function(ast)
+    it("Variable AST", function()
+        TEST_AST([[a]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }), function(ast)
             assert_equal(ast.value.name, 'a')
         end)
-        TEST_NEXT_AST([[a1]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a1' }) }), function(ast)
+        TEST_AST([[a1]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a1' }) }), function(ast)
             assert_equal(ast.value.name, 'a1')
         end)
-        TEST_NEXT_AST([[__a__]], AST.Variable:new({ value = VALUE.Symbol:new({ name = '__a__' }) }), function(ast)
+        TEST_AST([[__a__]], AST.Variable:new({ value = VALUE.Symbol:new({ name = '__a__' }) }), function(ast)
             assert_equal(ast.value.name, '__a__')
         end)
     end)
 
-    it("this is a funcCall ast", function()
-        TEST_NEXT_AST(
-            [[(print a)]],
-            AST.FunctionCall:new({
-                value = VALUE.BuiltinFunction:new({ func = function(...) end }),
-                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
-            }),
-            function(ast)
-                assert_equal(#ast.params, 1)
-                assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
-                assert_equal(ast.params[1].value.name, 'a')
-            end)
+    context("UserDefined FunctionCall AST", function()
+        it("zero operand funcCall AST", function()
+            TEST_AST(
+                "(custom-func)",
+                AST.FunctionCall:new({
+                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    params = {}
+                }),
+                function(ast)
+                    assert_equal(ast.value.name, "custom-func")
+                    assert_equal(#ast.params, 0)
+                end)
+        end)
+
+        it("unary operand funcCall AST", function()
+            TEST_UNARY_OPERAND_AST(
+                "(custom-func a)",
+                AST.FunctionCall:new({
+                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
+                }),
+                function(ast)
+                    assert_equal(ast.value.name, "custom-func")
+                end)
+        end)
+
+        it("binary operand funcCall AST", function()
+            TEST_BINARY_OPERANDS_AST(
+                "(custom-func a 1)",
+                AST.FunctionCall:new({
+                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    params = {
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                        AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                    },
+                }),
+                function(ast)
+                    assert_equal(ast.value.name, "custom-func")
+                    assert_equal(#ast.params, 3)
+                    assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
+                    assert_equal(ast.params[1].value.name, 'a')
+                    assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE)
+                    assert_equal(ast.params[2].value.name, 'b')
+                    assert_equal(ast.params[3].astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                    assert_equal(ast.params[3].value.intValue, 1)
+                end)
+        end)
+
+        it("multi operand funcCall AST", function()
+            TEST_AST(
+                "(custom-func a b 1)",
+                AST.FunctionCall:new({
+                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    params = {
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                        AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                    },
+                }),
+                function(ast)
+                    assert_equal(ast.value.name, "custom-func")
+                end)
+        end)
+    end)
+
+    context("Builtin FunctionCall AST", function()
+        it("Builtin unary operand funcCall AST", function()
+            local functions = {
+                "print", "class-of", "type-of", "random", "floor", "ceiling", "issqrt", "round", "truncate", "first",
+                "last",
+                "length",
+            }
+
+            for _, func in pairs(functions) do
+                TEST_UNARY_OPERAND_AST(
+                    string.format("(%s a)", func),
+                    AST.FunctionCall:new({
+                        value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                        params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
+                    }))
+            end
+        end)
+
+        it("Builtin binary operand funcCall AST", function()
+            local functions = {
+                "+", "-", "*", "/", "=", "/=", "<", ">", "<=", ">=", "eq", "eql", "equal", "subtypep",
+            }
+            for _, func in pairs(functions) do
+                TEST_BINARY_OPERANDS_AST(
+                    string.format("(%s a 1)", func),
+                    AST.FunctionCall:new({
+                        value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                        params = {
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                        },
+                    }))
+            end
+        end)
+
+        it("Builtin multi operand funcCall AST", function()
+            local functions = {
+                "list",
+            }
+            for _, func in pairs(functions) do
+                TEST_AST(
+                    string.format("(%s a b 1)", func),
+                    AST.FunctionCall:new({
+                        value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                        params = {
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                        },
+                    }),
+                    function(ast)
+                        assert_equal(type(ast.value.func), "function")
+                        assert_equal(#ast.params, 3)
+                        assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.params[1].value.name, 'a')
+                        assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.params[2].value.name, 'b')
+                        assert_equal(ast.params[3].astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                        assert_equal(ast.params[3].value.intValue, 1)
+                    end
+                )
+            end
+        end)
     end)
 end)
