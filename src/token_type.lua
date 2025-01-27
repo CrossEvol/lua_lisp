@@ -77,11 +77,11 @@ local TokenType = {
     -- keywords , keyword is kind of ID
     DEFCLASS = "defclass",
     DEFCONSTANT = "defconstant",
+    DEFPARAMETER = "defparameter",
+    DEFVAR = "defvar",
     DEFGENERIC = "defgeneric",
     DEFMETHOD = "defmethod",
-    DEFPARAMETER = "defparameter",
     DEFUN = "defun",
-    DEFVAR = "defvar",
     DO = "do",
     DOLIST = "dolist",
     DOTIMES = "dotimes",

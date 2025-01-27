@@ -191,6 +191,10 @@ function Parser:expr()
         local nextTokenType = self:peek().type
         if nextTokenType == TokenType.DEFVAR then
             return self:variableDeclaration()
+        elseif nextTokenType == TokenType.DEFCONSTANT then
+            return self:variableDeclaration()
+        elseif nextTokenType == TokenType.DEFPARAMETER then
+            return self:variableDeclaration()
         elseif nextTokenType == TokenType.LET then
             return self:letDeclaration()
         elseif nextTokenType == TokenType.DEFUN then
@@ -251,7 +255,21 @@ end
 
 --- @return Expr
 function Parser:variableDeclaration()
-    return {}
+    self:consume(TokenType.LPAREN)
+    local varName = self:currentToken().value
+    if varName.classType == TokenType.DEFCONSTANT then
+        self:consume(TokenType.DEFVAR)
+    elseif varName.classType == TokenType.DEFPARAMETER then
+        self:consume(TokenType.DEFPARAMETER)
+    elseif varName.classType == TokenType.DEFVAR then
+        self:consume(TokenType.DEFVAR)
+    else
+        error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
+    end
+    local varValue = self:expr()
+    self:consume(TokenType.RPAREN)
+    local variableDeclaration = AST.VariableDeclaration:new({ name = varName, value = varValue })
+    return variableDeclaration
 end
 
 --- @return Expr

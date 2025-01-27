@@ -13,6 +13,7 @@ local AST_TYPE = {
     CHARACTER_CONSTANT = "Constant",
     STRING_CONSTANT = "Constant",
     DECLARATION = "Declaration",
+    VARIABLE_DECLARATION = "VariableDeclaration",
     VARIABLE = "Variable",
     DEFINITION = "Definition",
     FUNCTION_CALL = "FunctionCall",
@@ -33,6 +34,7 @@ local AST_TYPE = {
 ---| '"CharacterConstant"'
 ---| '"StringConstant"'
 ---| '"Declaration"'
+---| '"VariableDeclaration"'
 ---| '"Variable"'
 ---| '"Definition"'
 ---| '"FunctionCall"'
@@ -114,11 +116,20 @@ CharacterConstant = Constant:new({ astType = AST_TYPE.CHARACTER_CONSTANT })
 ---@class StringConstant : Constant
 StringConstant = Constant:new({ astType = AST_TYPE.STRING_CONSTANT })
 
+---@class Variable : Expr
+Variable = Expr:new({ astType = AST_TYPE.VARIABLE })
+
 ---@class Declaration : Expr
 Declaration = Expr:new({ astType = AST_TYPE.DECLARATION })
 
----@class Variable : Expr
-Variable = Expr:new({ astType = AST_TYPE.VARIABLE })
+---@class VariableDeclaration : Declaration
+---@field name Variable
+---@field value Expr
+VariableDeclaration = Declaration:new({
+    astType = AST_TYPE.VARIABLE_DECLARATION,
+    name = Variable:new({}),
+    value = Expr:new({})
+})
 
 ---@class Definition : Expr
 Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
@@ -148,7 +159,8 @@ return {
     RationalConstant = RationalConstant,
     CharacterConstant = CharacterConstant,
     StringConstant = StringConstant,
-    Declaration = Declaration,
     Variable = Variable,
     FunctionCall = FunctionCall,
+    Declaration = Declaration,
+    VariableDeclaration = VariableDeclaration,
 }

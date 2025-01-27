@@ -211,4 +211,26 @@ describe("Parser tests", function()
             end
         end)
     end)
+
+    context("Declaration AST", function()
+        local defWords = {
+            "defvar", "defconstant", "defparameter",
+        }
+
+        for _, def in pairs(defWords) do
+            TEST_AST(
+                string.format("(%s a 1)", def),
+                AST.VariableDeclaration:new({
+                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                    value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                }),
+                function(ast)
+                    assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
+                    assert_equal(ast.name.value.name, "a")
+                    assert_equal(ast.value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                    assert_equal(ast.value.intValue, 1)
+                end
+            )
+        end
+    end)
 end)
