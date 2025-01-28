@@ -403,5 +403,90 @@ describe("Parser tests", function()
                 )
             end)
         end)
+
+        context("Lambda AST", function()
+            test("empty params and empty body", function()
+                TEST_AST(
+                    "((Lambda ()))",
+                    AST.LambdaCall:new({
+                        value = AST.LambdaDeclaration:new({
+                            params = {},
+                            expressions = {},
+                        }),
+                        params = {},
+                    }),
+                    function(ast)
+                        assert_equal(#ast.params, 0)
+                        assert_equal(ast.value.astType, AST.AST_TYPE.LAMBDA_DECLARATION)
+                        assert_equal(#ast.value.params, 0)
+                        assert_equal(#ast.value.expressions, 0)
+                    end
+                )
+            end)
+
+            test("non-empty params and empty body", function()
+                TEST_AST(
+                    [[
+                        ((Lambda ( x y )) 1 2 )
+                    ]],
+                    AST.LambdaCall:new({
+                        value = AST.LambdaDeclaration:new({
+                            params = {
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }),
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'y' }) }),
+                            },
+                            expressions = {},
+                        }),
+                        params = {
+                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
+                        },
+                    }),
+                    function(ast)
+                        assert_equal(#ast.params, 2)
+                        assert_equal(ast.params[1].astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                        assert_equal(ast.params[1].value.intValue, 1)
+                        assert_equal(ast.params[2].astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                        assert_equal(ast.params[2].value.intValue, 2)
+                        assert_equal(ast.value.astType, AST.AST_TYPE.LAMBDA_DECLARATION)
+                        assert_equal(#ast.value.params, 2)
+                        assert_equal(ast.value.params[1].astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.value.params[1].value.name, "x")
+                        assert_equal(ast.value.params[2].astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.value.params[2].value.name, "y")
+                        assert_equal(#ast.value.expressions, 0)
+                    end
+                )
+            end)
+
+            test("empty params and non-empty body", function()
+                TEST_AST(
+                    [[
+                        ((Lambda () ()(print x) ))
+                    ]],
+                    AST.LambdaCall:new({
+                        value = AST.LambdaDeclaration:new({
+                            params = {},
+                            expressions = {
+                                AST.Empty:new({}),
+                                AST.FunctionCall:new({
+                                    value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                                    params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                                })
+                            },
+                        }),
+                        params = {},
+                    }),
+                    function(ast)
+                        assert_equal(#ast.params, 0)
+                        assert_equal(ast.value.astType, AST.AST_TYPE.LAMBDA_DECLARATION)
+                        assert_equal(#ast.value.params, 0)
+                        assert_equal(#ast.value.expressions, 2)
+                        assert_equal(ast.value.expressions[1].astType, AST.AST_TYPE.EMPTY)
+                        assert_equal(ast.value.expressions[2].astType, AST.AST_TYPE.FUNCTION_CALL)
+                    end
+                )
+            end)
+        end)
     end)
 end)

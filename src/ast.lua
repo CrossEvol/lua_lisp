@@ -17,10 +17,11 @@ local AST_TYPE = {
     VARIABLE_DECLARATION = "VariableDeclaration",
     LET_DECLARATION = "LetDeclaration",
     FUNC_DECLARATION = "FuncDeclaration",
+    LAMBDA_DECLARATION = "LambdaDeclaration",
     VARIABLE = "Variable",
     DEFINITION = "Definition",
     FUNCTION_CALL = "FunctionCall",
-    LAMBDA = "Lambda",
+    LAMBDA_CALL = "LambdaCall",
     CONDITIONAL_EXPR = "ConditionalExpr",
     CONTROL_EXPR = "ControlExpr",
 }
@@ -41,10 +42,11 @@ local AST_TYPE = {
 ---| '"VariableDeclaration"'
 ---| '"LetDeclaration"'
 ---| '"FuncDeclaration"'
+---| '"LambdaDeclaration"'
 ---| '"Variable"'
 ---| '"Definition"'
 ---| '"FunctionCall"'
----| '"Lambda"'
+---| '"LambdaCall"'
 ---| '"ConditionalExpr"'
 ---| '"ControlExpr"'
 
@@ -162,6 +164,15 @@ FuncDeclaration = Declaration:new({
     expressions = {},
 })
 
+---@class LambdaDeclaration : Declaration
+---@field params table<Variable, integer>
+---@field expressions table<Expr, integer>
+LambdaDeclaration = Declaration:new({
+    astType = AST_TYPE.LAMBDA_DECLARATION,
+    params = {},
+    expressions = {},
+})
+
 
 ---@class Definition : Expr
 Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
@@ -171,8 +182,10 @@ Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
 ---@field params table<Expr, integer>
 FunctionCall = Expr:new({ astType = AST_TYPE.FUNCTION_CALL, params = {} })
 
----@class Lambda : Expr
-Lambda = Expr:new({ astType = AST_TYPE.LAMBDA })
+---@class LambdaCall : Expr
+---@field value LambdaDeclaration
+---@field params table<Expr, integer>
+LambdaCall = Expr:new({ astType = AST_TYPE.LAMBDA_CALL, params = {} })
 
 ---@class ConditionalExpr : Expr
 ConditionalExpr = Expr:new({ astType = AST_TYPE.CONDITIONAL_EXPR })
@@ -194,8 +207,10 @@ return {
     StringConstant = StringConstant,
     Variable = Variable,
     FunctionCall = FunctionCall,
+    LambdaCall = LambdaCall,
     Declaration = Declaration,
     VariableDeclaration = VariableDeclaration,
     LetDeclaration = LetDeclaration,
     FuncDeclaration = FuncDeclaration,
+    LambdaDeclaration = LambdaDeclaration,
 }
