@@ -3,7 +3,7 @@
         (expr)*
 
     expr :
-        declaration | funCall | lambdaCall | ifCall | loopCall | mapCall | doListCall | doTimesCall | factor
+        emptyExpr | declaration | funCall | lambdaCall | ifCall | loopCall | mapCall | doListCall | doTimesCall | factor
 
     block :
         (expr)*
@@ -20,11 +20,18 @@
         | genericDeclaration
         | lambdaDeclaration
 
+    emptyExpr :
+       LPAREN  RPAREN
+
     variableDeclaration :
-        LPAREN ( DEFCONSTANT | DEFPARAMETER | DEFVAR ) ID expr RPAREN
+        LPAREN ( DEFCONSTANT | DEFPARAMETER | DEFVAR )? ID expr RPAREN
 
     letDeclaration :
-        LPAREN LET (LPAREN ID expr)+ RPAREN expr RPAREN
+        LPAREN
+            LET
+                LPAREN (variableDeclaration)* RPAREN
+                block
+        RPAREN
 
     lambdaDeclaration :
         LPAREN LAMBDA
@@ -73,7 +80,7 @@
         RPAREN
 
     funCall :
-        LPAREN ID (expr)* RPAREN
+        LPAREN (ID (expr)*)? RPAREN
 
     ifCall :
         LPAREN expr expr expr RPAREN
@@ -116,16 +123,30 @@
 
 local Lexer = require("src.lexer").Lexer
 local Parser = require("src.parser").Parser
-local pretty = require("pl.pretty")
 
-local text = [[(custom-func)]]
+-- local text = "(defvar a 1)"
+local text = "(let ((x 1)(y 2))()(print x)(print y))"
 local lexer = Lexer:new({ text = text })
 local parser = Parser:new({ lexer = lexer })
 local ast = parser:parse().expressions[1]
 print(ast)
 print(ast.astType)
 print(ast.value)
-print(ast.value.classType)
+print(ast.value.astType)
+
+-- =============== Pretty Dump ======================
+-- local Lexer = require("src.lexer").Lexer
+-- local Parser = require("src.parser").Parser
+-- local pretty = require("pl.pretty")
+
+-- local text = "(let ((x 1)(y 2))(print x)(print y))"
+-- local lexer = Lexer:new({ text = text })
+-- local parser = Parser:new({ lexer = lexer })
+-- local ast = parser:parse().expressions[1]
+-- print(ast)
+-- print(ast.astType)
+-- print(ast.value)
+-- print(ast.value.classType)
 -- pretty.dump(ast)
 
 

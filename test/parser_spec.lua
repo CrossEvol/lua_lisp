@@ -50,6 +50,10 @@ describe("Parser tests", function()
         end
     end)
 
+    it("Empty AST", function()
+        TEST_AST("()", AST.Empty:new({}))
+    end)
+
     it("Constant AST", function()
         TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }), function(ast)
             assert_equal(ast.value.intValue, 1)
@@ -213,24 +217,115 @@ describe("Parser tests", function()
     end)
 
     context("Declaration AST", function()
-        local defWords = {
-            "defvar", "defconstant", "defparameter",
-        }
+        it("VariableDeclaration AST", function()
+            local defWords = {
+                "defvar", "defconstant", "defparameter",
+            }
 
-        for _, def in pairs(defWords) do
-            TEST_AST(
-                string.format("(%s a 1)", def),
-                AST.VariableDeclaration:new({
-                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                    value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                }),
-                function(ast)
-                    assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
-                    assert_equal(ast.name.value.name, "a")
-                    assert_equal(ast.value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                    assert_equal(ast.value.intValue, 1)
-                end
-            )
-        end
+            for _, def in pairs(defWords) do
+                TEST_AST(
+                    string.format("(%s a 1)", def),
+                    AST.VariableDeclaration:new({
+                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                        value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                    }),
+                    function(ast)
+                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.name.value.name, "a")
+                        assert_equal(ast.value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                        assert_equal(ast.value.value.intValue, 1)
+                    end
+                )
+            end
+        end)
+
+        context("LetDeclaration AST", function()
+            test("empty params and empty body", function()
+                TEST_AST(
+                    "(let ())",
+                    AST.LetDeclaration:new({
+                        params = {},
+                        expressions = {},
+                    }),
+                    function(ast)
+                        assert_equal(#ast.params, 0)
+                        assert_equal(#ast.expressions, 0)
+                    end
+                )
+            end)
+
+            test("non-empty params and empty body", function()
+                TEST_AST(
+                    [[
+                        (let
+                            (
+                                (x 1)(y 2)
+                            )
+                        )
+                    ]],
+                    AST.LetDeclaration:new({
+                        params = {
+                            AST.VariableDeclaration:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                                value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                            }),
+                            AST.VariableDeclaration:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
+                                value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
+                            })
+                        },
+                        expressions = {},
+                    }),
+                    function(ast)
+                        assert_equal(#ast.params, 2)
+                        assert_equal(#ast.expressions, 0)
+
+                        assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE_DECLARATION)
+                        assert_equal(ast.params[1].name.astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.params[1].name.value.name, "x")
+                        assert_equal(ast.params[1].value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                        assert_equal(ast.params[1].value.value.intValue, 1)
+
+                        assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE_DECLARATION)
+                        assert_equal(ast.params[2].name.astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.params[2].name.value.name, "y")
+                        assert_equal(ast.params[2].value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
+                        assert_equal(ast.params[2].value.value.intValue, 2)
+                    end
+                )
+            end)
+
+            test("empty params and non-empty body", function()
+                TEST_AST(
+                    [[
+                        (let
+                            ()
+                            ()
+                            (print x)
+                        )
+                    ]],
+                    AST.LetDeclaration:new({
+                        params = {},
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                            }),
+                        },
+                    }),
+                    function(ast)
+                        assert_equal(#ast.params, 0)
+                        assert_equal(#ast.expressions, 2)
+
+                        assert_equal(ast.expressions[1].astType, AST.AST_TYPE.EMPTY)
+
+                        assert_equal(ast.expressions[2].astType, AST.AST_TYPE.FUNCTION_CALL)
+                        assert_equal(ast.expressions[2].value.classType, VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION)
+                        assert_equal(#ast.expressions[2].params, 1)
+                    end
+                )
+            end)
+        end)
     end)
 end)

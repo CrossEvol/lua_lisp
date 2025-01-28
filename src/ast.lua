@@ -5,6 +5,7 @@ local AST_TYPE = {
     AST = "AST",
     PROGRAM = "PROGRAM",
     EXPR = "Expr",
+    EMPTY = "Empty",
     CONSTANT = "Constant",
     NUMBER_CONSTANT = "NumberConstant",
     INTEGER_CONSTANT = "IntegerConstant",
@@ -14,6 +15,7 @@ local AST_TYPE = {
     STRING_CONSTANT = "Constant",
     DECLARATION = "Declaration",
     VARIABLE_DECLARATION = "VariableDeclaration",
+    LET_DECLARATION = "LetDeclaration",
     VARIABLE = "Variable",
     DEFINITION = "Definition",
     FUNCTION_CALL = "FunctionCall",
@@ -26,6 +28,7 @@ local AST_TYPE = {
 ---| '"AST"'
 ---| '"PROGRAM"'
 ---| '"Expr"'
+---| '"Empty"'
 ---| '"Constant"'
 ---| '"NumberConstant"'
 ---| '"IntegerConstant"'
@@ -35,6 +38,7 @@ local AST_TYPE = {
 ---| '"StringConstant"'
 ---| '"Declaration"'
 ---| '"VariableDeclaration"'
+---| '"LetDeclaration"'
 ---| '"Variable"'
 ---| '"Definition"'
 ---| '"FunctionCall"'
@@ -81,6 +85,9 @@ function Expr:new(o)
     setmetatable(o, self)
     return o
 end
+
+---@class Empty : Expr
+Empty = Expr:new({ astType = AST_TYPE.EMPTY })
 
 ---@class Program : AST
 ---@field expressions  table<Expr, integer>
@@ -130,6 +137,14 @@ VariableDeclaration = Declaration:new({
     name = Variable:new({}),
     value = Expr:new({})
 })
+---@class LetDeclaration : Declaration
+---@field params table<Variable, integer>
+---@field expressions table<Expr, integer>
+LetDeclaration = Declaration:new({
+    astType = AST_TYPE.LET_DECLARATION,
+    params = {},
+    expressions = {},
+})
 
 ---@class Definition : Expr
 Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
@@ -152,6 +167,7 @@ return {
     AST = AST,
     AST_TYPE = AST_TYPE,
     Expr = Expr,
+    Empty = Empty,
     Constant = Constant,
     NumberConstant = NumberConstant,
     IntegerConstant = IntegerConstant,
@@ -163,4 +179,5 @@ return {
     FunctionCall = FunctionCall,
     Declaration = Declaration,
     VariableDeclaration = VariableDeclaration,
+    LetDeclaration = LetDeclaration,
 }

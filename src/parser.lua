@@ -7,9 +7,11 @@ local TokenType = require("src.token_type").TokenType
 ---@class Parser
 ---@field lexer Lexer
 ---@field token Token
+---@field inLetScope boolean
 Parser = {
     lexer = Lexer:new({ text = "" }),
     token = Token:new({}),
+    inLetScope = false
 }
 
 
@@ -54,7 +56,7 @@ end
         (expr)*
 
     expr :
-        declaration | funCall | lambdaCall | ifCall | loopCall | mapCall | doListCall | doTimesCall | factor
+        emptyExpr | declaration | funCall | lambdaCall | ifCall | loopCall | mapCall | doListCall | doTimesCall | factor
 
     block :
         (expr)*
@@ -71,11 +73,18 @@ end
         | genericDeclaration
         | lambdaDeclaration
 
+    emptyExpr :
+       LPAREN  RPAREN
+
     variableDeclaration :
-        LPAREN ( DEFCONSTANT | DEFPARAMETER | DEFVAR ) ID expr RPAREN
+        LPAREN ( DEFCONSTANT | DEFPARAMETER | DEFVAR )? ID expr RPAREN
 
     letDeclaration :
-        LPAREN LET (LPAREN ID expr)+ RPAREN expr RPAREN
+        LPAREN
+            LET
+                LPAREN (variableDeclaration)* RPAREN
+                block
+        RPAREN
 
     lambdaDeclaration :
         LPAREN LAMBDA
@@ -124,7 +133,7 @@ end
         RPAREN
 
     funCall :
-        LPAREN ID (expr)* RPAREN
+        LPAREN (ID (expr)*)? RPAREN
 
     ifCall :
         LPAREN expr expr expr RPAREN
@@ -189,7 +198,9 @@ end
 function Parser:expr()
     if self:currentToken().type == TokenType.LPAREN then
         local nextTokenType = self:peek().type
-        if nextTokenType == TokenType.DEFVAR then
+        if nextTokenType == TokenType.RPAREN then
+            return self:emptyExpr()
+        elseif nextTokenType == TokenType.DEFVAR then
             return self:variableDeclaration()
         elseif nextTokenType == TokenType.DEFCONSTANT then
             return self:variableDeclaration()
@@ -229,13 +240,11 @@ end
 
 ---@return table<Expr, integer>
 function Parser:block()
-    self:consume(TokenType.LPAREN)
     local expressions = {}
     while self:currentToken().type ~= TokenType.RPAREN do
         local expression = self:expr()
         table.insert(expressions, expression)
     end
-    self:consume(TokenType.RPAREN)
     return expressions
 end
 
@@ -253,19 +262,29 @@ function Parser:params()
     return params
 end
 
+---@return Expr
+function Parser:emptyExpr()
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.RPAREN)
+    return AST.Empty:new({})
+end
+
 --- @return Expr
 function Parser:variableDeclaration()
     self:consume(TokenType.LPAREN)
-    local varName = self:currentToken().value
-    if varName.classType == TokenType.DEFCONSTANT then
-        self:consume(TokenType.DEFVAR)
-    elseif varName.classType == TokenType.DEFPARAMETER then
+    local declToken = self:currentToken()
+    if declToken.type == TokenType.DEFCONSTANT then
+        self:consume(TokenType.DEFCONSTANT)
+    elseif declToken.type == TokenType.DEFPARAMETER then
         self:consume(TokenType.DEFPARAMETER)
-    elseif varName.classType == TokenType.DEFVAR then
+    elseif declToken.type == TokenType.DEFVAR then
         self:consume(TokenType.DEFVAR)
+    elseif self.inLetScope then
+        ;
     else
         error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
     end
+    local varName = self:factor()
     local varValue = self:expr()
     self:consume(TokenType.RPAREN)
     local variableDeclaration = AST.VariableDeclaration:new({ name = varName, value = varValue })
@@ -274,7 +293,24 @@ end
 
 --- @return Expr
 function Parser:letDeclaration()
-    return {}
+    self.inLetScope = true
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.LET)
+    local params = {}
+    self:consume(TokenType.LPAREN)
+    while self:currentToken().type ~= TokenType.RPAREN do
+        local param = self:variableDeclaration()
+        table.insert(params, param)
+    end
+    self:consume(TokenType.RPAREN)
+    local expressions = self:block()
+    local letDeclaration = AST.LetDeclaration:new({
+        params = params,
+        expressions = expressions,
+    })
+    self:consume(TokenType.RPAREN)
+    self.inLetScope = false
+    return letDeclaration
 end
 
 --- @return Expr
@@ -376,9 +412,8 @@ function Parser:factor()
         local node = AST.StringConstant:new({ value = token.value })
         return node
     elseif token.type == TokenType.ID then
-        self:consume(TokenType.ID)
-        local node = AST.Variable:new({ value = token.value })
-        return node
+        local variable = self:variable()
+        return variable
     else
         error({ ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo, }) })
     end
@@ -386,7 +421,10 @@ end
 
 --- @return Expr
 function Parser:variable()
-    return {}
+    local token = self:currentToken()
+    self:consume(TokenType.ID)
+    local node = AST.Variable:new({ value = token.value })
+    return node
 end
 
 --- @return Expr
