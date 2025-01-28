@@ -123,9 +123,12 @@
 
 local Lexer = require("src.lexer").Lexer
 local Parser = require("src.parser").Parser
+local NativeMethod = require("src.builtin_function").NativeMethod
+local AST = require("src.ast")
+local VALUE = require("src.builtin_class")
 
--- local text = "(defvar a 1)"
-local text = "(let ((x 1)(y 2))()(print x)(print y))"
+local text = "(custom-func a b 1)"
+
 local lexer = Lexer:new({ text = text })
 local parser = Parser:new({ lexer = lexer })
 local ast = parser:parse().expressions[1]
@@ -133,21 +136,15 @@ print(ast)
 print(ast.astType)
 print(ast.value)
 print(ast.value.astType)
-
--- =============== Pretty Dump ======================
--- local Lexer = require("src.lexer").Lexer
--- local Parser = require("src.parser").Parser
--- local pretty = require("pl.pretty")
-
--- local text = "(let ((x 1)(y 2))(print x)(print y))"
--- local lexer = Lexer:new({ text = text })
--- local parser = Parser:new({ lexer = lexer })
--- local ast = parser:parse().expressions[1]
--- print(ast)
--- print(ast.astType)
--- print(ast.value)
--- print(ast.value.classType)
--- pretty.dump(ast)
+local expect = AST.FunctionCall:new({
+    value = VALUE.Symbol:new({ name = "custom-func" }),
+    params = {
+        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+        AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+    },
+})
+print(ast == expect)
 
 
 -- ====================================>

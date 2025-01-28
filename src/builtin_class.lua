@@ -98,14 +98,53 @@ Null = T:new({ classType = BUILT_IN_CLASS.NULL, })
 ---@field func function
 Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, func = function() end })
 
+---@param o any
+---@return Function
+function Function:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---@param obj1 Function
+---@param obj2 Function
+function Function.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.func == obj2.func
+end
+
 ---@class BuiltinFunction : Function
 BuiltinFunction = Function:new({
     classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION,
 })
 
+---@param obj1 Function
+---@param obj2 Function
+function BuiltinFunction.__eq(obj1, obj2)
+    return Function.__eq(obj1, obj2)
+end
+
 ---@class Symbol : T
 ---@field name string
 Symbol = T:new({ classType = BUILT_IN_CLASS.SYMBOL, name = "" })
+
+---@param obj1 Symbol
+---@param obj2 Symbol
+function Symbol.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.name == obj2.name
+end
 
 ---@class Number : T
 Number = T:new({ classType = BUILT_IN_CLASS.NUMBER, })
@@ -114,32 +153,82 @@ Number = T:new({ classType = BUILT_IN_CLASS.NUMBER, })
 ---@field intValue integer
 FixNum = Number:new({ classType = BUILT_IN_CLASS.FIX_NUM, intValue = 0 })
 
----@class Integer : T
-Integer = Number:new({ classType = BUILT_IN_CLASS.INTEGER, })
-
----@class Float : T
-Float = Number:new({ classType = BUILT_IN_CLASS.FLOAT, })
+---@param obj1 FixNum
+---@param obj2 FixNum
+function FixNum.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.intValue == obj2.intValue
+end
 
 ---@class SingleFloat : T
 ---@field floatValue number
 SingleFloat = Number:new({ classType = BUILT_IN_CLASS.SINGLE_FLOAT, floatValue = 0.0 })
+
+---@param obj1 SingleFloat
+---@param obj2 SingleFloat
+function SingleFloat.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.floatValue == obj2.floatValue
+end
 
 ---@class Rational : T
 ---@field numerator integer
 ---@field denominator integer
 Rational = Number:new({ classType = BUILT_IN_CLASS.RATIONAL, numerator = 0, denominator = 1 })
 
+---@param obj1 Rational
+---@param obj2 Rational
+function Rational.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.numerator == obj2.numerator and obj1.denominator == obj2.denominator
+end
+
 ---@class Character : T
 ---@field chars string
-Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, chars = '' })
+Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, chars = "" })
 
----@class String : T
----@field stringValue string
-String = T:new({ classType = BUILT_IN_CLASS.STRING, stringValue = '' })
+---@param obj1 Character
+---@param obj2 Character
+function Character.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.chars == obj2.chars
+end
 
 ---@class SimpleBaseString : T
 ---@field stringValue string
 SimpleBaseString = T:new({ classType = BUILT_IN_CLASS.SIMPLE_BASE_STRING, stringValue = '' })
+
+---@param obj1 SimpleBaseString
+---@param obj2 SimpleBaseString
+function SimpleBaseString.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.stringValue == obj2.stringValue
+end
 
 ---@class Array : T
 Array = T:new({ classType = BUILT_IN_CLASS.ARRAY, })
@@ -163,13 +252,10 @@ return {
     Value = Value,
     Number = Number,
     FixNum = FixNum,
-    Integer = Integer,
-    Float = Float,
     SingleFloat = SingleFloat,
     Rational = Rational,
     Symbol = Symbol,
     Character = Character,
-    String = String,
     Array = Array,
     Cons = Cons,
     HashTable = HashTable,

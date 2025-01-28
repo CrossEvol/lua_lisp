@@ -4,49 +4,16 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 describe("Parser tests", function()
-    local TEST_AST = function(text, expect, func) end
-
-    local TEST_UNARY_OPERAND_AST = function(text, expect, func) end
-
-    local TEST_BINARY_OPERANDS_AST = function(text, expect, func) end
+    local TEST_AST = function(text, expect)
+    end
 
     before(function()
-        TEST_AST = function(text, expect, func)
+        TEST_AST = function(text, expect)
             local lexer = Lexer:new({ text = text })
             local parser = Parser:new({ lexer = lexer })
             local program = parser:parse()
-            local ast = program.expressions[1]
-            assert_equal(ast.astType, expect.astType)
-            assert_equal(ast.value.classType, expect.value.classType)
-            if func ~= nil then
-                local success, _ = pcall(func, ast)
-                assert_true(success)
-            end
-            return ast
-        end
-
-        TEST_UNARY_OPERAND_AST = function(text, expect, func)
-            local success, parsedAST = pcall(TEST_AST, text, expect, function(ast)
-                assert_equal(#ast.params, 1)
-                assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
-                assert_equal(ast.params[1].value.name, 'a')
-            end)
-            assert_true(success)
-            if func ~= nil then
-                local success, _ = pcall(func, parsedAST)
-                assert_true(success)
-            end
-        end
-
-        TEST_BINARY_OPERANDS_AST = function(text, expect)
-            local success, _ = pcall(TEST_AST, text, expect, function(ast)
-                assert_equal(#ast.params, 2)
-                assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
-                assert_equal(ast.params[1].value.name, 'a')
-                assert_equal(ast.params[2].astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                assert_equal(ast.params[2].value.intValue, 1)
-            end)
-            assert_true(success)
+            local actual = program.expressions[1]
+            assert_equal(actual, expect)
         end
     end)
 
@@ -55,35 +22,18 @@ describe("Parser tests", function()
     end)
 
     it("Constant AST", function()
-        TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }), function(ast)
-            assert_equal(ast.value.intValue, 1)
-        end)
-        TEST_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }),
-            function(ast)
-                assert_equal(ast.value.floatValue, 1.0)
-            end)
+        TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }))
+        TEST_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }))
         TEST_AST([[1/2]],
             AST.RationalConstant:new({ value = VALUE.Rational:new({ numerator = 1, denominator = 2 }) }))
-        TEST_AST([[#\A]], AST.CharacterConstant:new({ value = VALUE.Character:new({ chars = [[#\A]] }) }),
-            function(ast)
-                assert_equal(ast.value.chars, [[#\A]])
-            end)
-        TEST_AST([["1"]], AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "1" }) }),
-            function(ast)
-                assert_equal(ast.value.stringValue, "1")
-            end)
+        TEST_AST([[#\A]], AST.CharacterConstant:new({ value = VALUE.Character:new({ chars = [[#\A]] }) }))
+        TEST_AST([["1"]], AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "1" }) }))
     end)
 
     it("Variable AST", function()
-        TEST_AST([[a]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }), function(ast)
-            assert_equal(ast.value.name, 'a')
-        end)
-        TEST_AST([[a1]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a1' }) }), function(ast)
-            assert_equal(ast.value.name, 'a1')
-        end)
-        TEST_AST([[__a__]], AST.Variable:new({ value = VALUE.Symbol:new({ name = '__a__' }) }), function(ast)
-            assert_equal(ast.value.name, '__a__')
-        end)
+        TEST_AST([[a]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }))
+        TEST_AST([[a1]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a1' }) }))
+        TEST_AST([[__a__]], AST.Variable:new({ value = VALUE.Symbol:new({ name = '__a__' }) }))
     end)
 
     context("UserDefined FunctionCall AST", function()
@@ -93,27 +43,20 @@ describe("Parser tests", function()
                 AST.FunctionCall:new({
                     value = VALUE.Symbol:new({ name = "custom-func" }),
                     params = {}
-                }),
-                function(ast)
-                    assert_equal(ast.value.name, "custom-func")
-                    assert_equal(#ast.params, 0)
-                end)
+                }))
         end)
 
         it("unary operand funcCall AST", function()
-            TEST_UNARY_OPERAND_AST(
+            TEST_AST(
                 "(custom-func a)",
                 AST.FunctionCall:new({
                     value = VALUE.Symbol:new({ name = "custom-func" }),
                     params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
-                }),
-                function(ast)
-                    assert_equal(ast.value.name, "custom-func")
-                end)
+                }))
         end)
 
         it("binary operand funcCall AST", function()
-            TEST_BINARY_OPERANDS_AST(
+            TEST_AST(
                 "(custom-func a 1)",
                 AST.FunctionCall:new({
                     value = VALUE.Symbol:new({ name = "custom-func" }),
@@ -121,17 +64,7 @@ describe("Parser tests", function()
                         AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
                         AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
                     },
-                }),
-                function(ast)
-                    assert_equal(ast.value.name, "custom-func")
-                    assert_equal(#ast.params, 3)
-                    assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
-                    assert_equal(ast.params[1].value.name, 'a')
-                    assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE)
-                    assert_equal(ast.params[2].value.name, 'b')
-                    assert_equal(ast.params[3].astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                    assert_equal(ast.params[3].value.intValue, 1)
-                end)
+                }))
         end)
 
         it("multi operand funcCall AST", function()
@@ -144,10 +77,7 @@ describe("Parser tests", function()
                         AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
                         AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
                     },
-                }),
-                function(ast)
-                    assert_equal(ast.value.name, "custom-func")
-                end)
+                }))
         end)
     end)
 
@@ -159,11 +89,11 @@ describe("Parser tests", function()
                 "length",
             }
 
-            for _, func in pairs(functions) do
-                TEST_UNARY_OPERAND_AST(
-                    string.format("(%s a)", func),
+            for _, funcName in pairs(functions) do
+                TEST_AST(
+                    string.format("(%s a)", funcName),
                     AST.FunctionCall:new({
-                        value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
                         params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
                     }))
             end
@@ -173,11 +103,11 @@ describe("Parser tests", function()
             local functions = {
                 "+", "-", "*", "/", "=", "/=", "<", ">", "<=", ">=", "eq", "eql", "equal", "subtypep",
             }
-            for _, func in pairs(functions) do
-                TEST_BINARY_OPERANDS_AST(
-                    string.format("(%s a 1)", func),
+            for _, funcName in pairs(functions) do
+                TEST_AST(
+                    string.format("(%s a 1)", funcName),
                     AST.FunctionCall:new({
-                        value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
                         params = {
                             AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
                             AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
@@ -190,27 +120,17 @@ describe("Parser tests", function()
             local functions = {
                 "list",
             }
-            for _, func in pairs(functions) do
+            for _, funcName in pairs(functions) do
                 TEST_AST(
-                    string.format("(%s a b 1)", func),
+                    string.format("(%s a b 1)", funcName),
                     AST.FunctionCall:new({
-                        value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
                         params = {
                             AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
                             AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
                             AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
                         },
-                    }),
-                    function(ast)
-                        assert_equal(type(ast.value.func), "function")
-                        assert_equal(#ast.params, 3)
-                        assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.params[1].value.name, 'a')
-                        assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.params[2].value.name, 'b')
-                        assert_equal(ast.params[3].astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                        assert_equal(ast.params[3].value.intValue, 1)
-                    end
+                    })
                 )
             end
         end)
@@ -228,13 +148,7 @@ describe("Parser tests", function()
                     AST.VariableDeclaration:new({
                         name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
                         value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                    }),
-                    function(ast)
-                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.name.value.name, "a")
-                        assert_equal(ast.value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                        assert_equal(ast.value.value.intValue, 1)
-                    end
+                    })
                 )
             end
         end)
@@ -246,11 +160,7 @@ describe("Parser tests", function()
                     AST.LetDeclaration:new({
                         params = {},
                         expressions = {},
-                    }),
-                    function(ast)
-                        assert_equal(#ast.params, 0)
-                        assert_equal(#ast.expressions, 0)
-                    end
+                    })
                 )
             end)
 
@@ -275,23 +185,7 @@ describe("Parser tests", function()
                             })
                         },
                         expressions = {},
-                    }),
-                    function(ast)
-                        assert_equal(#ast.params, 2)
-                        assert_equal(#ast.expressions, 0)
-
-                        assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE_DECLARATION)
-                        assert_equal(ast.params[1].name.astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.params[1].name.value.name, "x")
-                        assert_equal(ast.params[1].value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                        assert_equal(ast.params[1].value.value.intValue, 1)
-
-                        assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE_DECLARATION)
-                        assert_equal(ast.params[2].name.astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.params[2].name.value.name, "y")
-                        assert_equal(ast.params[2].value.astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                        assert_equal(ast.params[2].value.value.intValue, 2)
-                    end
+                    })
                 )
             end)
 
@@ -309,21 +203,11 @@ describe("Parser tests", function()
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
                                 params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
                             }),
                         },
-                    }),
-                    function(ast)
-                        assert_equal(#ast.params, 0)
-                        assert_equal(#ast.expressions, 2)
-
-                        assert_equal(ast.expressions[1].astType, AST.AST_TYPE.EMPTY)
-
-                        assert_equal(ast.expressions[2].astType, AST.AST_TYPE.FUNCTION_CALL)
-                        assert_equal(ast.expressions[2].value.classType, VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION)
-                        assert_equal(#ast.expressions[2].params, 1)
-                    end
+                    })
                 )
             end)
         end)
@@ -335,13 +219,7 @@ describe("Parser tests", function()
                         name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
                         params = {},
                         expressions = {},
-                    }),
-                    function(ast)
-                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.name.value.name, "f1")
-                        assert_equal(#ast.params, 0)
-                        assert_equal(#ast.expressions, 0)
-                    end
+                    })
                 )
             end)
 
@@ -357,19 +235,7 @@ describe("Parser tests", function()
                             AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
                         },
                         expressions = {},
-                    }),
-                    function(ast)
-                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.name.value.name, "f1")
-                        assert_equal(#ast.params, 2)
-                        assert_equal(#ast.expressions, 0)
-
-                        assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.params[1].value.name, "x")
-
-                        assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.params[2].value.name, "y")
-                    end
+                    })
                 )
             end)
 
@@ -379,27 +245,16 @@ describe("Parser tests", function()
                         (defun f1 ()()(print x))
                     ]],
                     AST.FuncDeclaration:new({
+                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
                         params = {},
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = function(...) end }),
-                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }) }
                             }),
                         },
-                    }),
-                    function(ast)
-                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.name.value.name, "f1")
-                        assert_equal(#ast.params, 0)
-                        assert_equal(#ast.expressions, 2)
-
-                        assert_equal(ast.expressions[1].astType, AST.AST_TYPE.EMPTY)
-
-                        assert_equal(ast.expressions[2].astType, AST.AST_TYPE.FUNCTION_CALL)
-                        assert_equal(ast.expressions[2].value.classType, VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION)
-                        assert_equal(#ast.expressions[2].params, 1)
-                    end
+                    })
                 )
             end)
         end)
@@ -414,13 +269,7 @@ describe("Parser tests", function()
                             expressions = {},
                         }),
                         params = {},
-                    }),
-                    function(ast)
-                        assert_equal(#ast.params, 0)
-                        assert_equal(ast.value.astType, AST.AST_TYPE.LAMBDA_DECLARATION)
-                        assert_equal(#ast.value.params, 0)
-                        assert_equal(#ast.value.expressions, 0)
-                    end
+                    })
                 )
             end)
 
@@ -441,21 +290,7 @@ describe("Parser tests", function()
                             AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
                             AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
                         },
-                    }),
-                    function(ast)
-                        assert_equal(#ast.params, 2)
-                        assert_equal(ast.params[1].astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                        assert_equal(ast.params[1].value.intValue, 1)
-                        assert_equal(ast.params[2].astType, AST.AST_TYPE.INTEGER_CONSTANT)
-                        assert_equal(ast.params[2].value.intValue, 2)
-                        assert_equal(ast.value.astType, AST.AST_TYPE.LAMBDA_DECLARATION)
-                        assert_equal(#ast.value.params, 2)
-                        assert_equal(ast.value.params[1].astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.value.params[1].value.name, "x")
-                        assert_equal(ast.value.params[2].astType, AST.AST_TYPE.VARIABLE)
-                        assert_equal(ast.value.params[2].value.name, "y")
-                        assert_equal(#ast.value.expressions, 0)
-                    end
+                    })
                 )
             end)
 
@@ -470,21 +305,13 @@ describe("Parser tests", function()
                             expressions = {
                                 AST.Empty:new({}),
                                 AST.FunctionCall:new({
-                                    value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                                    value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
                                     params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
                                 })
                             },
                         }),
                         params = {},
-                    }),
-                    function(ast)
-                        assert_equal(#ast.params, 0)
-                        assert_equal(ast.value.astType, AST.AST_TYPE.LAMBDA_DECLARATION)
-                        assert_equal(#ast.value.params, 0)
-                        assert_equal(#ast.value.expressions, 2)
-                        assert_equal(ast.value.expressions[1].astType, AST.AST_TYPE.EMPTY)
-                        assert_equal(ast.value.expressions[2].astType, AST.AST_TYPE.FUNCTION_CALL)
-                    end
+                    })
                 )
             end)
         end)
