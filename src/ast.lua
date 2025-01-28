@@ -16,6 +16,7 @@ local AST_TYPE = {
     DECLARATION = "Declaration",
     VARIABLE_DECLARATION = "VariableDeclaration",
     LET_DECLARATION = "LetDeclaration",
+    FUNC_DECLARATION = "FuncDeclaration",
     VARIABLE = "Variable",
     DEFINITION = "Definition",
     FUNCTION_CALL = "FunctionCall",
@@ -39,6 +40,7 @@ local AST_TYPE = {
 ---| '"Declaration"'
 ---| '"VariableDeclaration"'
 ---| '"LetDeclaration"'
+---| '"FuncDeclaration"'
 ---| '"Variable"'
 ---| '"Definition"'
 ---| '"FunctionCall"'
@@ -127,24 +129,39 @@ StringConstant = Constant:new({ astType = AST_TYPE.STRING_CONSTANT })
 Variable = Expr:new({ astType = AST_TYPE.VARIABLE })
 
 ---@class Declaration : Expr
-Declaration = Expr:new({ astType = AST_TYPE.DECLARATION })
+---@field name Variable
+Declaration = Expr:new({
+    astType = AST_TYPE.DECLARATION,
+    name = Variable:new({}),
+})
 
 ---@class VariableDeclaration : Declaration
----@field name Variable
 ---@field value Expr
 VariableDeclaration = Declaration:new({
     astType = AST_TYPE.VARIABLE_DECLARATION,
     name = Variable:new({}),
     value = Expr:new({})
 })
----@class LetDeclaration : Declaration
+
+---@class LetDeclaration : Expr
 ---@field params table<Variable, integer>
 ---@field expressions table<Expr, integer>
-LetDeclaration = Declaration:new({
+LetDeclaration = Expr:new({
     astType = AST_TYPE.LET_DECLARATION,
     params = {},
     expressions = {},
 })
+
+---@class FuncDeclaration : Declaration
+---@field params table<Variable, integer>
+---@field expressions table<Expr, integer>
+FuncDeclaration = Declaration:new({
+    astType = AST_TYPE.FUNC_DECLARATION,
+    name = "",
+    params = {},
+    expressions = {},
+})
+
 
 ---@class Definition : Expr
 Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
@@ -180,4 +197,5 @@ return {
     Declaration = Declaration,
     VariableDeclaration = VariableDeclaration,
     LetDeclaration = LetDeclaration,
+    FuncDeclaration = FuncDeclaration,
 }

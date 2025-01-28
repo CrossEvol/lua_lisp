@@ -327,5 +327,81 @@ describe("Parser tests", function()
                 )
             end)
         end)
+        context("FuncDeclaration AST", function()
+            test("empty params and empty body", function()
+                TEST_AST(
+                    "(defun f1 ())",
+                    AST.FuncDeclaration:new({
+                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
+                        params = {},
+                        expressions = {},
+                    }),
+                    function(ast)
+                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.name.value.name, "f1")
+                        assert_equal(#ast.params, 0)
+                        assert_equal(#ast.expressions, 0)
+                    end
+                )
+            end)
+
+            test("non-empty params and empty body", function()
+                TEST_AST(
+                    [[
+                        (defun f1 ( x y ))
+                    ]],
+                    AST.FuncDeclaration:new({
+                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
+                        params = {
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
+                        },
+                        expressions = {},
+                    }),
+                    function(ast)
+                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.name.value.name, "f1")
+                        assert_equal(#ast.params, 2)
+                        assert_equal(#ast.expressions, 0)
+
+                        assert_equal(ast.params[1].astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.params[1].value.name, "x")
+
+                        assert_equal(ast.params[2].astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.params[2].value.name, "y")
+                    end
+                )
+            end)
+
+            test("empty params and non-empty body", function()
+                TEST_AST(
+                    [[
+                        (defun f1 ()()(print x))
+                    ]],
+                    AST.FuncDeclaration:new({
+                        params = {},
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = function(...) end }),
+                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                            }),
+                        },
+                    }),
+                    function(ast)
+                        assert_equal(ast.name.astType, AST.AST_TYPE.VARIABLE)
+                        assert_equal(ast.name.value.name, "f1")
+                        assert_equal(#ast.params, 0)
+                        assert_equal(#ast.expressions, 2)
+
+                        assert_equal(ast.expressions[1].astType, AST.AST_TYPE.EMPTY)
+
+                        assert_equal(ast.expressions[2].astType, AST.AST_TYPE.FUNCTION_CALL)
+                        assert_equal(ast.expressions[2].value.classType, VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION)
+                        assert_equal(#ast.expressions[2].params, 1)
+                    end
+                )
+            end)
+        end)
     end)
 end)

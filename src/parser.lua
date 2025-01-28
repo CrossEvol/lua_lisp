@@ -320,7 +320,19 @@ end
 
 --- @return Expr
 function Parser:funcDeclaration()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.DEFUN)
+    local varName = self:factor()
+    local params = self:params()
+    local expressions = self:block()
+    self:consume(TokenType.RPAREN)
+    local funcDecl = AST.FuncDeclaration:new({
+        name = varName,
+        params = params,
+        expressions = expressions,
+
+    })
+    return funcDecl
 end
 
 --- @return Expr
