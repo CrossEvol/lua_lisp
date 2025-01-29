@@ -21,6 +21,22 @@ describe("Parser tests", function()
         TEST_AST("()", AST.Empty:new({}))
     end)
 
+    it("SingleQuote AST", function()
+        TEST_AST([['vector]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'vector' }) }))
+        TEST_AST([['()]], AST.FunctionCall:new({
+            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+            params = {}
+        }))
+        TEST_AST([['(1 a b)]], AST.FunctionCall:new({
+            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+            params = {
+                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+            }
+        }))
+    end)
+
     it("Constant AST", function()
         TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }))
         TEST_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }))
@@ -404,6 +420,98 @@ describe("Parser tests", function()
                                 accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
                             })
                         }
+                    })
+                )
+            end)
+        end)
+
+        context("GenericDeclaration AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    [[
+                        (defgeneric speak ()
+                            (:documentation ""))
+                    ]],
+                    AST.GenericDeclaration:new({
+                        name          = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        documentation = AST.StringConstant:new({
+                            value = VALUE.SimpleBaseString:new({ stringValue = "" })
+                        }),
+                        params        = {},
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    [[
+                        (defgeneric speak (a b)
+                            (:documentation "Make the animal speak."))
+                    ]],
+                    AST.GenericDeclaration:new({
+                        name          = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        documentation = AST.StringConstant:new({
+                            value = VALUE.SimpleBaseString:new({
+                                stringValue =
+                                "Make the animal speak."
+                            })
+                        }),
+                        params        = {
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                        },
+                    })
+                )
+            end)
+        end)
+        context("MethodDeclaration AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    [[
+                        (defmethod speak ())
+                    ]],
+                    AST.MethodDeclaration:new({
+                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        params      = {},
+                        expressions = {},
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    [[
+                    (defmethod speak ((a animal)(b person))
+                        ()
+                        (print a)
+                        (print b)
+                    )
+                    ]],
+                    AST.MethodDeclaration:new({
+                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        params      = {
+                            AST.TypedParam:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "animal" }) }),
+                            }),
+                            AST.TypedParam:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                            }),
+                        },
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = {
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                                },
+                            }),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = {
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                                },
+                            }),
+                        },
                     })
                 )
             end)

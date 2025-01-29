@@ -3,6 +3,7 @@ local ParserError = require("src.exception").ParserError
 local AST = require("src.ast")
 local Token = require("src.token").Token
 local TokenType = require("src.token_type").TokenType
+local VALUE = require("src.builtin_class")
 
 ---@class Parser
 ---@field lexer Lexer
@@ -126,17 +127,21 @@ end
 
     methodDeclaration:
         LPAREN DEFMETHOD ID
-            LPAREN LPAREN (ID ID)+ RPAREN RPAREN
+            LPAREN (typedParam)+ RPAREN
             block
         RPAREN
 
     genericDeclaration:
         LPAREN DEFGENERIC ID
-            LPAREN params RPAREN
+            params
             LPAREN
                 COLON DOCUMENTATION string
             RPAREN
-            block
+        RPAREN
+
+    typedParam:
+        LPAREN
+            ID ID
         RPAREN
 
     funCall :
@@ -171,7 +176,13 @@ end
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | T | NIL | variable
+        number | character | string | T | NIL | quoteList | quoteType | variable
+
+    quoteList :
+        SINGLE_QUOTE params
+
+    quoteType :
+        SINGLE_QUOTE ID
 
     variable:
         ID
@@ -436,12 +447,66 @@ end
 
 --- @return Expr
 function Parser:methodDeclaration()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.DEFMETHOD)
+
+    local name = self:variable()
+
+    self:consume(TokenType.LPAREN)
+    local params = {}
+    while self:currentToken().type ~= TokenType.RPAREN do
+        local typedParam = self:typedParam()
+        table.insert(params, typedParam)
+    end
+    self:consume(TokenType.RPAREN)
+
+    local expressions = self:block()
+
+    self:consume(TokenType.RPAREN)
+
+    local methodDeclaration = AST.MethodDeclaration:new({
+        name = name,
+        params = params,
+        expressions = expressions
+
+    })
+    return methodDeclaration
 end
 
 --- @return Expr
 function Parser:genericDeclaration()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.DEFGENERIC)
+    local name = self:variable()
+    local params = self:params()
+
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.COLON)
+    self:consume(TokenType.DOCUMENTATION)
+    local documentation = self:factor()
+    self:consume(TokenType.RPAREN)
+    self:consume(TokenType.RPAREN)
+
+    local genericDeclaration = AST.GenericDeclaration:new({
+        name = name,
+        params = params,
+        documentation = documentation,
+    })
+    return genericDeclaration
+end
+
+--- @return Expr
+function Parser:typedParam()
+    self:consume(TokenType.LPAREN)
+    local name = self:variable()
+    local value = self:variable()
+    self:consume(TokenType.RPAREN)
+
+    local typedParam = AST.TypedParam:new({
+        name = name,
+        value = value,
+    })
+    return typedParam
 end
 
 --- @return Expr
@@ -546,6 +611,14 @@ function Parser:factor()
         self:consume(TokenType.COLON)
         local variable = self:variable()
         return variable
+    elseif token.type == TokenType.SINGLE_QUOTE then
+        if self:peek().type == TokenType.LPAREN then
+            local list = self:quoteList()
+            return list
+        else
+            local type = self:quoteType()
+            return type
+        end
     elseif token.type == TokenType.ID then
         local variable = self:variable()
         return variable
@@ -560,6 +633,31 @@ function Parser:variable()
     self:consume(TokenType.ID)
     local node = AST.Variable:new({ value = token.value })
     return node
+end
+
+--- @return Expr
+function Parser:quoteList()
+    self:consume(TokenType.SINGLE_QUOTE)
+    self:consume(TokenType.LPAREN)
+    local params = {}
+    while self:currentToken().type ~= TokenType.RPAREN do
+        local param = self:expr()
+        table.insert(params, param)
+    end
+    self:consume(TokenType.RPAREN)
+
+    local funcCall = AST.FunctionCall:new({
+        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+        params = params,
+    })
+    return funcCall
+end
+
+--- @return Expr
+function Parser:quoteType()
+    self:consume(TokenType.SINGLE_QUOTE)
+    local typeName = self:variable()
+    return typeName
 end
 
 --- @return Expr

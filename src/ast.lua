@@ -22,6 +22,9 @@ local AST_TYPE = {
     IF_CALL = "IfCall",
     FUNC_DECLARATION = "FuncDeclaration",
     CLASS_DECLARATION = "ClassDeclaration",
+    TYPED_PARAM = "TypedParam",
+    METHOD_DECLARATION = "MethodDeclaration",
+    GENERIC_DECLARATION = "GenericDeclaration",
     SLOT_DECLARATION = "SlotDeclaration",
     LAMBDA_DECLARATION = "LambdaDeclaration",
     VARIABLE = "Variable",
@@ -53,6 +56,9 @@ local AST_TYPE = {
 ---| '"IfCall"'
 ---| '"FuncDeclaration"'
 ---| '"ClassDeclaration"'
+---| '"TypedParam"'
+---| '"MethodDeclaration"'
+---| '"GenericDeclaration"'
 ---| '"SlotDeclaration"'
 ---| '"LambdaDeclaration"'
 ---| '"Variable"'
@@ -523,6 +529,117 @@ function ClassDeclaration.__eq(obj1, obj2)
     return true
 end
 
+---(a person) , a is name , person is value
+---@class TypedParam : Declaration
+---@field name Variable
+---@field value Variable
+TypedParam = Declaration:new({
+    astType = AST_TYPE.TYPED_PARAM,
+    name = Variable:new({}),
+    value = Variable:new({}),
+})
+
+---@param obj1 TypedParam
+---@param obj2 TypedParam
+function TypedParam.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.name ~= obj2.name then
+        return false
+    end
+    if obj1.value ~= obj2.value then
+        return false
+    end
+    return true
+end
+
+---@class MethodDeclaration : Declaration
+---@field value nil
+---@field name Variable
+---@field params table<TypedParam, integer>
+---@field expressions table<Expr, integer>
+MethodDeclaration = Declaration:new({
+    astType = AST_TYPE.METHOD_DECLARATION,
+    value = nil,
+    name = Variable:new({}),
+    params = {},
+    expressions = {},
+})
+
+---@param obj1 MethodDeclaration
+---@param obj2 MethodDeclaration
+function MethodDeclaration.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.name ~= obj2.name then
+        return false
+    end
+    if #obj1.params ~= #obj2.params then
+        return false
+    end
+    for i = 1, #obj1.params, 1 do
+        if obj1.params[i] ~= obj2.params[i] then
+            return false
+        end
+    end
+    if #obj1.expressions ~= #obj2.expressions then
+        return false
+    end
+    for i = 1, #obj1.expressions, 1 do
+        if obj1.expressions[i] ~= obj2.expressions[i] then
+            return false
+        end
+    end
+    return true
+end
+
+---@class GenericDeclaration : Declaration
+---@field value nil
+---@field name Variable
+---@field documentation StringConstant
+---@field params table<Variable, integer>
+GenericDeclaration = Declaration:new({
+    astType = AST_TYPE.GENERIC_DECLARATION,
+    value = nil,
+    name = Variable:new({}),
+    documentation = StringConstant:new({}),
+    params = {},
+})
+
+---@param obj1 GenericDeclaration
+---@param obj2 GenericDeclaration
+function GenericDeclaration.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.name ~= obj2.name then
+        return false
+    end
+    if obj1.documentation ~= obj2.documentation then
+        return false
+    end
+    if #obj1.params ~= #obj2.params then
+        return false
+    end
+    for i = 1, #obj1.params, 1 do
+        if obj1.params[i] ~= obj2.params[i] then
+            return false
+        end
+    end
+    return true
+end
+
 ---@class LambdaDeclaration : Declaration
 ---@field value nil
 ---@field params table<Variable, integer>
@@ -652,5 +769,8 @@ return {
     FuncDeclaration = FuncDeclaration,
     LambdaDeclaration = LambdaDeclaration,
     ClassDeclaration = ClassDeclaration,
+    MethodDeclaration = MethodDeclaration,
+    GenericDeclaration = GenericDeclaration,
+    TypedParam = TypedParam,
     SlotDeclaration = SlotDeclaration,
 }

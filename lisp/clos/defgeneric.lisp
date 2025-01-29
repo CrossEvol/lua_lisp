@@ -1,4 +1,4 @@
-  (defgeneric speak (a)
+(defgeneric speak (a)
   (:documentation "Make the animal speak."))
 
 (defclass animal ()

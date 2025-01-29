@@ -57,6 +57,7 @@ local SlotKeywords = {
     DOCUMENT = "document",
     TYPE = "type",
     VISIBILITY = "visibility",
+    DOCUMENTATION = "documentation",
 }
 
 ---@alias SlotKeywords.Type
@@ -68,6 +69,7 @@ local SlotKeywords = {
 ---| '"document"'
 ---| '"type"'
 ---| '"visibility"'
+---| '"documentation"'
 
 ---@class TokenType
 local TokenType = {
@@ -131,6 +133,7 @@ local TokenType = {
     DOCUMENT = "document",
     TYPE = "type",
     VISIBILITY = "visibility",
+    DOCUMENTATION = "documentation",
 }
 
 ---@alias TokenType.Type
@@ -187,6 +190,7 @@ local TokenType = {
 ---| '"document"'
 ---| '"type"'
 ---| '"visibility"'
+---| '"documentation"'
 
 
 return {

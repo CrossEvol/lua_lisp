@@ -66,17 +66,21 @@
 
     methodDeclaration:
         LPAREN DEFMETHOD ID
-            LPAREN LPAREN (ID ID)+ RPAREN RPAREN
+            LPAREN (typedParam)+ RPAREN
             block
         RPAREN
 
     genericDeclaration:
         LPAREN DEFGENERIC ID
-            LPAREN params RPAREN
+            params
             LPAREN
                 COLON DOCUMENTATION string
             RPAREN
-            block
+        RPAREN
+
+    typedParam:
+        LPAREN
+            ID ID
         RPAREN
 
     funCall :
@@ -111,7 +115,13 @@
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | T | NIL | variable
+        number | character | string | T | NIL | quoteList | quoteType | variable
+
+    quoteList :
+        SINGLE_QUOTE params
+
+    quoteType :
+        SINGLE_QUOTE ID
 
     variable:
         ID
@@ -128,20 +138,7 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-(defclass person (Base1 Base2)
-  ((name
-    :initarg :name
-    :accessor name
-    :reader getName
-    :writer setName
-    :initform T
-    :document "person"
-    :type integer
-    :visibility public
-    )
-   (lisper
-    :initform nil
-    :accessor lisper)))
+'vector
 ]]
 
 local lexer = Lexer:new({ text = text })
@@ -151,31 +148,7 @@ print(ast)
 print(ast.astType)
 print(ast.value)
 print(ast.value.astType)
-local expect = AST.ClassDeclaration:new({
-    name         = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
-    superClasses = {
-        AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base1" }) }),
-        AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base2" }) }),
-    },
-    slots        = {
-        AST.SlotDeclaration:new({
-            name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
-            initarg = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
-            initform = AST.TrueConstant:new({}),
-            accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
-            reader = AST.Variable:new({ value = VALUE.Symbol:new({ name = "getName" }) }),
-            writer = AST.Variable:new({ value = VALUE.Symbol:new({ name = "setName" }) }),
-            document = AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "person" }) }),
-            type = AST.Variable:new({ value = VALUE.Symbol:new({ name = "integer" }) }),
-            visibility = AST.Variable:new({ value = VALUE.Symbol:new({ name = "public" }) }),
-        }),
-        AST.SlotDeclaration:new({
-            name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
-            initform = AST.NilConstant:new({}),
-            accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
-        })
-    }
-})
+local expect = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'vector' }) })
 print(ast == expect)
 
 

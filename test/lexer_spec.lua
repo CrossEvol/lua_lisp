@@ -76,6 +76,7 @@ describe("Lexer tests", function()
         TEST_NEXT_SLOT_PARAM_TOKEN([[:document]], TokenType.DOCUMENT, BUILT_IN_CLASS.AUXILIARY)
         TEST_NEXT_SLOT_PARAM_TOKEN([[:type]], TokenType.TYPE, BUILT_IN_CLASS.AUXILIARY)
         TEST_NEXT_SLOT_PARAM_TOKEN([[:visibility]], TokenType.VISIBILITY, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:documentation]], TokenType.DOCUMENTATION, BUILT_IN_CLASS.AUXILIARY)
     end)
 
     it("this is a number", function()
