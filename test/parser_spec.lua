@@ -516,5 +516,219 @@ describe("Parser tests", function()
                 )
             end)
         end)
+        context("DoListCall AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    [[
+                        (dolist (item '())
+                        ())
+                    ]],
+                    AST.DoListCall:new({
+                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "item" }) }),
+                        list        = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {}
+                        }),
+                        expressions = {
+                            AST.Empty:new({})
+                        },
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    [[
+                        (dolist (item '(a b 1 T nil))
+                        ()
+                        (print item))
+                    ]],
+                    AST.DoListCall:new({
+                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "item" }) }),
+                        list        = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                                AST.TrueConstant:new({}),
+                                AST.NilConstant:new({}),
+                            }
+                        }),
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "item" }) }), },
+                            })
+                        },
+                    })
+                )
+            end)
+        end)
+        context("DoTimesCall AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    [[
+                        (dotimes (i 5)
+                            ()
+                        )
+                    ]],
+                    AST.DoTimesCall:new({
+                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }),
+                        times       = AST.IntegerConstant:new({
+                            value = VALUE.FixNum:new({ intValue = 5 }),
+                        }),
+                        expressions = {
+                            AST.Empty:new({})
+                        },
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    [[
+                        (dotimes (i 5)
+                            ()
+                            (print i)
+                        )
+                    ]],
+                    AST.DoTimesCall:new({
+                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }),
+                        times       = AST.IntegerConstant:new({
+                            value = VALUE.FixNum:new({ intValue = 5 }),
+                        }),
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }), },
+                            })
+                        },
+                    })
+                )
+            end)
+        end)
+        context("MapCall AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    [[
+                        (map 'list (lambda () ()) '())
+                    ]],
+                    AST.MapCall:new({
+                        returnType = AST.Variable:new({ value = VALUE.Symbol:new({ name = "list" }) }),
+                        lambda = AST.LambdaDeclaration:new({
+                            params = {},
+                            expressions = {
+                                AST.Empty:new({}),
+                            },
+                        }),
+                        list = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {}
+                        }),
+                    })
+                )
+            end)
+            -- test("all expr not empty", function()
+            --     TEST_AST(
+            --         [[
+            --             (map 'vector (lambda (it) (+ it 10)) '(1 2 3))
+            --         ]],
+            --         AST.MapCall:new({
+            --             returnType = AST.Variable:new({ value = VALUE.Symbol:new({ name = "vector" }) }),
+            --             lambda = AST.LambdaDeclaration:new({
+            --                 params = {
+            --                     AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+            --                 },
+            --                 expressions = {
+            --                     AST.FunctionCall:new({
+            --                         value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+            --                         params = {
+            --                             AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+            --                             AST.IntegerConstant:new({
+            --                                 value = VALUE.FixNum:new({ intValue = 10 }),
+            --                             }),
+            --                         }
+            --                     }),
+            --                 },
+            --             }),
+            --             list = AST.FunctionCall:new({
+            --                 value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+            --                 params = {
+            --                     AST.IntegerConstant:new({
+            --                         value = VALUE.FixNum:new({ intValue = 1 }),
+            --                     }),
+            --                     AST.IntegerConstant:new({
+            --                         value = VALUE.FixNum:new({ intValue = 2 }),
+            --                     }),
+            --                     AST.IntegerConstant:new({
+            --                         value = VALUE.FixNum:new({ intValue = 3 }),
+            --                     }),
+            --                 }
+            --             }),
+            --         })
+            --     )
+            -- end)
+        end)
+        context("MapcarCall AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    [[
+                        (mapcar (lambda () ()) '())
+                    ]],
+                    AST.MapcarCall:new({
+                        lambda = AST.LambdaDeclaration:new({
+                            params = {},
+                            expressions = {
+                                AST.Empty:new({}),
+                            },
+                        }),
+                        list = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {}
+                        }),
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    [[
+                        (mapcar (lambda (it) (+ it 10)) '(1 2 3))
+                    ]],
+                    AST.MapcarCall:new({
+                        lambda = AST.LambdaDeclaration:new({
+                            params = {
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+                            },
+                            expressions = {
+                                AST.FunctionCall:new({
+                                    value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+                                    params = {
+                                        AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+                                        AST.IntegerConstant:new({
+                                            value = VALUE.FixNum:new({ intValue = 10 }),
+                                        }),
+                                    }
+                                }),
+                            },
+                        }),
+                        list = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {
+                                AST.IntegerConstant:new({
+                                    value = VALUE.FixNum:new({ intValue = 1 }),
+                                }),
+                                AST.IntegerConstant:new({
+                                    value = VALUE.FixNum:new({ intValue = 2 }),
+                                }),
+                                AST.IntegerConstant:new({
+                                    value = VALUE.FixNum:new({ intValue = 3 }),
+                                }),
+                            }
+                        }),
+                    })
+                )
+            end)
+        end)
     end)
 end)

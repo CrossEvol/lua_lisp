@@ -16,6 +16,7 @@ local KEYWORDS = {
     COLLECT = "collect",
     LAMBDA = "lambda",
     MAP = "map",
+    MAPCAR = "mapcar",
     LET = "let",
     LOOP = "loop",
     WHEN = "when",
@@ -41,6 +42,7 @@ local KEYWORDS = {
 ---| '"collect"'
 ---| '"lambda"'
 ---| '"map"'
+---| '"mapcar"'
 ---| '"let"'
 ---| '"loop"'
 ---| '"when"'
@@ -117,6 +119,7 @@ local TokenType = {
     COLLECT = "collect",
     LAMBDA = "lambda",
     MAP = "map",
+    MAPCAR = "mapcar",
     LET = "let",
     LOOP = "loop",
     WHEN = "when",
@@ -176,6 +179,7 @@ local TokenType = {
 ---| '"collect"'
 ---| '"lambda"'
 ---| '"map"'
+---| '"mapcar"'
 ---| '"let"'
 ---| '"loop"'
 ---| '"when"'

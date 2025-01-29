@@ -341,7 +341,7 @@ function Lexer:identifier()
     if NativeMethod:exists(str) then
         return Token:new({
             type = TokenType.ID,
-            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find(str) }),
+            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find(str), name = str:lower() }),
             lineNo = self.lineNo,
             columnNo =
                 self.columnNo

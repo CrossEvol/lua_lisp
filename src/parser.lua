@@ -157,7 +157,12 @@ end
 
     mapCall :
         LPAREN
-            MAP SINGLE_QUOTE ID lambdaCall
+            MAP quoteType lambdaDeclaration expr
+        RPAREN
+
+    mapcarCall :
+        LPAREN
+            MAPCAR lambdaDeclaration expr
         RPAREN
 
     doListCall :
@@ -242,6 +247,8 @@ function Parser:expr()
             return self:loopCall()
         elseif nextTokenType == TokenType.MAP then
             return self:mapCall()
+        elseif nextTokenType == TokenType.MAPCAR then
+            return self:mapcarCall()
         elseif nextTokenType == TokenType.DOLIST then
             return self:doListCall()
         elseif nextTokenType == TokenType.DOTIMES then
@@ -542,22 +549,101 @@ end
 
 --- @return Expr
 function Parser:loopCall()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.LOOP)
+    local item = self:variable()
+    self:consume(TokenType.IN)
+    local list = self:expr()
+    local returnNil = false
+    if self:currentToken().type == TokenType.DO then
+        self:consume(TokenType.DO)
+        returnNil = true
+    elseif self:currentToken().type == TokenType.COLLECT then
+        self:consume(TokenType.COLLECT)
+        returnNil = false
+    else
+        error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
+    end
+    local body = self:expr()
+    self:consume(TokenType.RPAREN)
+
+    local loopCall = AST.LoopCall:new({
+        value = item,
+        list = list,
+        returnNil = returnNil,
+        body = body,
+    })
+    return loopCall
 end
 
 --- @return Expr
 function Parser:mapCall()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.MAP)
+    local returnType = self:quoteType()
+    local lambdaDecl = self:lambdaDeclaration()
+    local list = self:expr()
+    self:consume(TokenType.RPAREN)
+
+    local mapCall = AST.MapCall:new({
+        returnType = returnType,
+        lambda = lambdaDecl,
+        list = list,
+    })
+    return mapCall
+end
+
+--- @return Expr
+function Parser:mapcarCall()
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.MAPCAR)
+    local lambdaDecl = self:lambdaDeclaration()
+    local list = self:expr()
+    self:consume(TokenType.RPAREN)
+
+    local mapcarCall = AST.MapcarCall:new({
+        lambda = lambdaDecl,
+        list = list,
+    })
+    return mapcarCall
 end
 
 --- @return Expr
 function Parser:doListCall()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.DOLIST)
+    self:consume(TokenType.LPAREN)
+    local item = self:variable()
+    local list = self:expr()
+    self:consume(TokenType.RPAREN)
+    local expressions = self:block()
+    self:consume(TokenType.RPAREN)
+
+    local doListCall = AST.DoListCall:new({
+        value = item,
+        list = list,
+        expressions = expressions,
+    })
+    return doListCall
 end
 
 --- @return Expr
 function Parser:doTimesCall()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.DOTIMES)
+    self:consume(TokenType.LPAREN)
+    local loopVar = self:variable()
+    local loopTimes = self:expr()
+    self:consume(TokenType.RPAREN)
+    local expressions = self:block()
+    self:consume(TokenType.RPAREN)
+
+    local doTimesCall = AST.DoTimesCall:new({
+        value = loopVar,
+        times = loopTimes,
+        expressions = expressions,
+    })
+    return doTimesCall
 end
 
 --- @return Expr
@@ -657,6 +743,10 @@ end
 function Parser:quoteType()
     self:consume(TokenType.SINGLE_QUOTE)
     local typeName = self:variable()
+    if typeName.value.classType == VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
+        ---@diagnostic disable-next-line: undefined-field
+        typeName.value = VALUE.Symbol:new({ name = typeName.value.name })
+    end
     return typeName
 end
 

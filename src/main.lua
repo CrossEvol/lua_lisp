@@ -96,7 +96,12 @@
 
     mapCall :
         LPAREN
-            MAP SINGLE_QUOTE ID lambdaCall
+            MAP quoteType lambdaDeclaration expr
+        RPAREN
+
+    mapcarCall :
+        LPAREN
+            MAPCAR lambdaDeclaration expr
         RPAREN
 
     doListCall :
@@ -138,7 +143,7 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-'vector
+              (map 'list (lambda () ()) '())
 ]]
 
 local lexer = Lexer:new({ text = text })
@@ -148,7 +153,19 @@ print(ast)
 print(ast.astType)
 print(ast.value)
 print(ast.value.astType)
-local expect = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'vector' }) })
+local expect = AST.MapCall:new({
+    returnType = AST.Variable:new({ value = VALUE.Symbol:new({ name = "list" }) }),
+    lambda = AST.LambdaDeclaration:new({
+        params = {},
+        expressions = {
+            AST.Empty:new({}),
+        },
+    }),
+    list = AST.FunctionCall:new({
+        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+        params = {}
+    }),
+})
 print(ast == expect)
 
 

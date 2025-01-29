@@ -120,8 +120,10 @@ function Function.__eq(obj1, obj2)
 end
 
 ---@class BuiltinFunction : Function
+---@field name string
 BuiltinFunction = Function:new({
     classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION,
+    name = "",
 })
 
 ---@param obj1 Function

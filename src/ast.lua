@@ -31,8 +31,11 @@ local AST_TYPE = {
     DEFINITION = "Definition",
     FUNCTION_CALL = "FunctionCall",
     LAMBDA_CALL = "LambdaCall",
-    CONDITIONAL_EXPR = "ConditionalExpr",
-    CONTROL_EXPR = "ControlExpr",
+    DOTIMES_CALL = "DoTimesCall",
+    DOLIST_CALL = "DoListCall",
+    LOOP_CALL = "LoopCall",
+    MAP_CALL = "MapCall",
+    MAPCAR_CALL = "MapcarCall",
 }
 
 ---@alias AST_TYPE.Type
@@ -65,8 +68,11 @@ local AST_TYPE = {
 ---| '"Definition"'
 ---| '"FunctionCall"'
 ---| '"LambdaCall"'
----| '"ConditionalExpr"'
----| '"ControlExpr"'
+---| '"DoTimesCall"'
+---| '"DoListCall"'
+---| '"LoopCall"'
+---| '"MapCall"'
+---| '"MapcarCall"'
 
 ---@class AST
 ---@field astType string
@@ -738,11 +744,176 @@ function LambdaCall.__eq(obj1, obj2)
     return true
 end
 
----@class ConditionalExpr : Expr
-ConditionalExpr = Expr:new({ astType = AST_TYPE.CONDITIONAL_EXPR })
+---@class DoTimesCall : Expr
+---@field value Variable
+---@field times Variable
+---@field expressions table<Expr, integer>
+DoTimesCall = Expr:new({
+    astType = AST_TYPE.DOTIMES_CALL,
+    value = Variable:new({}),
+    times = Expr:new({}),
+    expressions = {}
+})
 
----@class ControlExpr : Expr
-ControlExpr = Expr:new({ astType = AST_TYPE.CONTROL_EXPR })
+---@param obj1 DoTimesCall
+---@param obj2 DoTimesCall
+function DoTimesCall.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.value ~= obj2.value then
+        return false
+    end
+    if obj1.times ~= obj2.times then
+        return false
+    end
+    if #obj1.expressions ~= #obj2.expressions then
+        return false
+    end
+    for i = 1, #obj1.expressions, 1 do
+        if obj1.expressions[i] ~= obj2.expressions[i] then
+            return false
+        end
+    end
+    return true
+end
+
+---@class DoListCall : Expr
+---@field value Variable
+---@field list Variable
+---@field expressions table<Expr, integer>
+DoListCall = Expr:new({
+    astType = AST_TYPE.DOLIST_CALL,
+    value = Variable:new({}),
+    list = Expr:new({}),
+    expressions = {}
+})
+
+---@param obj1 DoListCall
+---@param obj2 DoListCall
+function DoListCall.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.value ~= obj2.value then
+        return false
+    end
+    if obj1.list ~= obj2.list then
+        return false
+    end
+    if #obj1.expressions ~= #obj2.expressions then
+        return false
+    end
+    for i = 1, #obj1.expressions, 1 do
+        if obj1.expressions[i] ~= obj2.expressions[i] then
+            return false
+        end
+    end
+    return true
+end
+
+---@class LoopCall : Expr
+---@field value Variable
+---@field returnNil boolean
+---@field list Variable
+---@field body Expr
+LoopCall = Expr:new({
+    astType = AST_TYPE.LOOP_CALL,
+    returnNil = false,
+    value = Variable:new({}),
+    list = Expr:new({}),
+    body = Expr:new({}),
+})
+
+---@param obj1 LoopCall
+---@param obj2 LoopCall
+function LoopCall.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.value ~= obj2.value then
+        return false
+    end
+    if obj1.list ~= obj2.list then
+        return false
+    end
+    if obj1.body ~= obj2.body then
+        return false
+    end
+    return true
+end
+
+---@class MapCall : Expr
+---@field value nil
+---@field returnType Variable
+---@field lambda LambdaDeclaration
+---@field list Expr
+MapCall = Expr:new({
+    astType = AST_TYPE.MAP_CALL,
+    value = nil,
+    returnType = Variable:new({}),
+    lambda = LambdaDeclaration:new({}),
+    list = Expr:new({}),
+})
+
+---@param obj1 MapCall
+---@param obj2 MapCall
+function MapCall.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.returnType ~= obj2.returnType then
+        return false
+    end
+    if obj1.lambda ~= obj2.lambda then
+        return false
+    end
+    if obj1.list ~= obj2.list then
+        return false
+    end
+    return true
+end
+
+---@class MapcarCall : Expr
+---@field value nil
+---@field lambda LambdaDeclaration
+---@field list Expr
+MapcarCall = Expr:new({
+    astType = AST_TYPE.MAPCAR_CALL,
+    value = nil,
+    lambda = LambdaDeclaration:new({}),
+    list = Expr:new({}),
+})
+
+---@param obj1 MapcarCall
+---@param obj2 MapcarCall
+function MapcarCall.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.lambda ~= obj2.lambda then
+        return false
+    end
+    if obj1.list ~= obj2.list then
+        return false
+    end
+    return true
+end
 
 return {
     AST = AST,
@@ -773,4 +944,9 @@ return {
     GenericDeclaration = GenericDeclaration,
     TypedParam = TypedParam,
     SlotDeclaration = SlotDeclaration,
+    DoTimesCall = DoTimesCall,
+    DoListCall = DoListCall,
+    LoopCall = LoopCall,
+    MapCall = MapCall,
+    MapcarCall = MapcarCall,
 }

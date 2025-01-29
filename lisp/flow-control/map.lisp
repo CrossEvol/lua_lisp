@@ -6,3 +6,5 @@
 
 (map 'string (lambda (it) (code-char it)) '#(97 98 99))
 ;; => "abc"
+
+(map 'list (lambda () ()) '())
