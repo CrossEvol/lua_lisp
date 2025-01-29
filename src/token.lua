@@ -7,7 +7,7 @@ local TokenType = require("src.token_type").TokenType
 ---@field lineNo integer
 ---@field columnNo integer
 Token = {
-    type = TokenType.EOF,
+    type = TokenType.EMPTY,
     value = Value:new({}),
     lineNo = 0,
     columnNo = 0,

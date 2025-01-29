@@ -114,13 +114,13 @@ end
 
     slotDeclaration :
         LPAREN ID
-            (COLON INITFORM expr)?
-            (COLON INITARG COLON ID)?
-            (COLON ACCESSOR ID)?
-            (COLON READER ID)?
-            (COLON WRITER ID)?
-            (COLON DOCUMENT string)?
-            (COLON TYPE ID?
+            (COLON INITFORM factor)?
+            (COLON INITARG COLON factor)?
+            (COLON ACCESSOR factor)?
+            (COLON READER factor)?
+            (COLON WRITER factor)?
+            (COLON DOCUMENT factor)?
+            (COLON TYPE factor?
             (COLON VISIBILITY COLON (PUBLIC | PROTECTED | PRIVATE))?
         RPAREN
 
@@ -171,7 +171,7 @@ end
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | variable
+        number | character | string | T | NIL | variable
 
     variable:
         ID
@@ -354,7 +354,7 @@ end
 function Parser:funcDeclaration()
     self:consume(TokenType.LPAREN)
     self:consume(TokenType.DEFUN)
-    local varName = self:factor()
+    local varName = self:variable()
     local params = self:params()
     local expressions = self:block()
     self:consume(TokenType.RPAREN)
@@ -369,12 +369,69 @@ end
 
 --- @return Expr
 function Parser:classDeclaration()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.DEFCLASS)
+    local className = self:variable()
+    local superClasses = self:params()
+    local slots = {}
+    self:consume(TokenType.LPAREN)
+    while self:currentToken().type ~= TokenType.RPAREN do
+        local slot = self:slotDeclaration()
+        table.insert(slots, slot)
+    end
+    self:consume(TokenType.RPAREN)
+    self:consume(TokenType.RPAREN)
+
+    local classDecl = AST.ClassDeclaration:new({
+        name = className,
+        superClasses = superClasses,
+        slots = slots,
+    })
+    return classDecl
 end
 
 --- @return Expr
 function Parser:slotDeclaration()
-    return {}
+    self:consume(TokenType.LPAREN)
+    local slotName = self:variable()
+    local slot = AST.SlotDeclaration:new({
+        name = slotName,
+    })
+
+    while self:currentToken().type == TokenType.COLON do
+        self:consume(TokenType.COLON)
+        local token = self:currentToken()
+        if token.type == TokenType.INITFORM then
+            self:consume(TokenType.INITFORM)
+            slot[TokenType.INITFORM] = self:factor()
+        elseif token.type == TokenType.INITARG then
+            self:consume(TokenType.INITARG)
+            slot[TokenType.INITARG] = self:factor()
+        elseif token.type == TokenType.ACCESSOR then
+            self:consume(TokenType.ACCESSOR)
+            slot[TokenType.ACCESSOR] = self:factor()
+        elseif token.type == TokenType.READER then
+            self:consume(TokenType.READER)
+            slot[TokenType.READER] = self:factor()
+        elseif token.type == TokenType.WRITER then
+            self:consume(TokenType.WRITER)
+            slot[TokenType.WRITER] = self:factor()
+        elseif token.type == TokenType.DOCUMENT then
+            self:consume(TokenType.DOCUMENT)
+            slot[TokenType.DOCUMENT] = self:factor()
+        elseif token.type == TokenType.TYPE then
+            self:consume(TokenType.TYPE)
+            slot[TokenType.TYPE] = self:factor()
+        elseif token.type == TokenType.VISIBILITY then
+            self:consume(TokenType.VISIBILITY)
+            slot[TokenType.VISIBILITY] = self:factor()
+        else
+            error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
+        end
+    end
+
+    self:consume(TokenType.RPAREN)
+    return slot
 end
 
 --- @return Expr
@@ -404,7 +461,18 @@ end
 
 --- @return Expr
 function Parser:ifCall()
-    return {}
+    self:consume(TokenType.LPAREN)
+    self:consume(TokenType.IF)
+    local condition = self:expr()
+    local thenExpr = self:expr()
+    local elseExpr = self:expr()
+    self:consume(TokenType.RPAREN)
+    local ifCall = AST.IfCall:new({
+        condition = condition,
+        thenExpr  = thenExpr,
+        elseExpr  = elseExpr,
+    })
+    return ifCall
 end
 
 --- @return Expr
@@ -466,6 +534,18 @@ function Parser:factor()
         self:consume(TokenType.STRING)
         local node = AST.StringConstant:new({ value = token.value })
         return node
+    elseif token.type == TokenType.T then
+        self:consume(TokenType.T)
+        local literal = AST.TrueConstant:new({})
+        return literal
+    elseif token.type == TokenType.NIL then
+        self:consume(TokenType.NIL)
+        local literal = AST.NilConstant:new({})
+        return literal
+    elseif token.type == TokenType.COLON then
+        self:consume(TokenType.COLON)
+        local variable = self:variable()
+        return variable
     elseif token.type == TokenType.ID then
         local variable = self:variable()
         return variable

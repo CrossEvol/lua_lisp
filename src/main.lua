@@ -54,13 +54,13 @@
 
     slotDeclaration :
         LPAREN ID
-            (COLON INITFORM expr)?
-            (COLON INITARG COLON ID)?
-            (COLON ACCESSOR ID)?
-            (COLON READER ID)?
-            (COLON WRITER ID)?
-            (COLON DOCUMENT string)?
-            (COLON TYPE ID?
+            (COLON INITFORM factor)?
+            (COLON INITARG COLON factor)?
+            (COLON ACCESSOR factor)?
+            (COLON READER factor)?
+            (COLON WRITER factor)?
+            (COLON DOCUMENT factor)?
+            (COLON TYPE factor?
             (COLON VISIBILITY COLON (PUBLIC | PROTECTED | PRIVATE))?
         RPAREN
 
@@ -111,7 +111,7 @@
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | variable
+        number | character | string | T | NIL | variable
 
     variable:
         ID
@@ -127,7 +127,22 @@ local NativeMethod = require("src.builtin_function").NativeMethod
 local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
-local text = "(custom-func a b 1)"
+local text = [[
+(defclass person (Base1 Base2)
+  ((name
+    :initarg :name
+    :accessor name
+    :reader getName
+    :writer setName
+    :initform T
+    :document "person"
+    :type integer
+    :visibility public
+    )
+   (lisper
+    :initform nil
+    :accessor lisper)))
+]]
 
 local lexer = Lexer:new({ text = text })
 local parser = Parser:new({ lexer = lexer })
@@ -136,20 +151,40 @@ print(ast)
 print(ast.astType)
 print(ast.value)
 print(ast.value.astType)
-local expect = AST.FunctionCall:new({
-    value = VALUE.Symbol:new({ name = "custom-func" }),
-    params = {
-        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
-        AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+local expect = AST.ClassDeclaration:new({
+    name         = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+    superClasses = {
+        AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base1" }) }),
+        AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base2" }) }),
     },
+    slots        = {
+        AST.SlotDeclaration:new({
+            name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+            initarg = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+            initform = AST.TrueConstant:new({}),
+            accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+            reader = AST.Variable:new({ value = VALUE.Symbol:new({ name = "getName" }) }),
+            writer = AST.Variable:new({ value = VALUE.Symbol:new({ name = "setName" }) }),
+            document = AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "person" }) }),
+            type = AST.Variable:new({ value = VALUE.Symbol:new({ name = "integer" }) }),
+            visibility = AST.Variable:new({ value = VALUE.Symbol:new({ name = "public" }) }),
+        }),
+        AST.SlotDeclaration:new({
+            name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
+            initform = AST.NilConstant:new({}),
+            accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
+        })
+    }
 })
 print(ast == expect)
 
 
 -- ====================================>
 
--- local text = [[-]]
+-- local text = [[:initform]]
 -- local lexer = Lexer:new({ text = text })
 -- local token = lexer:nextToken()
+-- token = lexer:nextToken()
 -- print(token)
+-- print(token.type)
+-- print(token.value.classType)

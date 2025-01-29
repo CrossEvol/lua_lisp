@@ -1,6 +1,7 @@
 local Token = require("src.token").Token
 local TokenType = require("src.token_type").TokenType
 local KEYWORDS = require("src.token_type").KEYWORDS
+local SlotKeywords = require("src.token_type").SlotKeywords
 local LexerError = require("src.exception")
 local NativeMethod = require("src.builtin_function").NativeMethod
 local BuiltinClassModule = require("src.builtin_class")
@@ -39,11 +40,13 @@ end
 ---@field position integer
 ---@field lineNo integer
 ---@field columnNo integer
+---@field prevToken Token
 Lexer = {
     text = [[]],
     position = 1,
     lineNo = 1,
     columnNo = 1,
+    prevToken = Token:new({})
 }
 
 ---@param o table
@@ -316,14 +319,22 @@ function Lexer:identifier()
         self:advance()
     end
 
+    if self.prevToken.type == TokenType.COLON and SlotKeywords[str:upper()] then
+        return Token:new({
+            type = TokenType[str:upper()],
+            value = Auxiliary:new({}),
+            lineNo = self.lineNo,
+            columnNo = self.columnNo,
+        })
+    end
+
     if KEYWORDS[str:upper()] ~= nil then
         -- lisp can use keyword as varname, (defvar defvar 1) is valid, should change the type and use previous type as value later
         return Token:new({
             type = TokenType[str:upper()],
             value = Auxiliary:new({}),
             lineNo = self.lineNo,
-            columnNo =
-                self.columnNo
+            columnNo = self.columnNo,
         })
     end
 
@@ -379,6 +390,7 @@ function Lexer:nextToken()
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
+            self.prevToken = token
             self:advance()
             return token
         elseif self:currentChar() == TokenType.NEGATIVE then

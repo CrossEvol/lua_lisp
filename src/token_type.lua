@@ -48,8 +48,32 @@ local KEYWORDS = {
 ---| '"T"'
 ---| '"NIL"'
 
+local SlotKeywords = {
+    INITFORM = "initform",
+    INITARG = "initarg",
+    ACCESSOR = "accessor",
+    READER = "reader",
+    WRITER = "writer",
+    DOCUMENT = "document",
+    TYPE = "type",
+    VISIBILITY = "visibility",
+}
+
+---@alias SlotKeywords.Type
+---| '"initform"'
+---| '"initarg"'
+---| '"accessor"'
+---| '"reader"'
+---| '"writer"'
+---| '"document"'
+---| '"type"'
+---| '"visibility"'
+
 ---@class TokenType
 local TokenType = {
+    -- optional value, only used for default value
+    EMPTY = "",
+
     -- non keywords
     LPAREN = '(',
     RPAREN = ')',
@@ -97,9 +121,20 @@ local TokenType = {
     AND = "AND",
     T = "T",
     NIL = "NIL",
+
+    -- slot keywords
+    INITFORM = "initform",
+    INITARG = "initarg",
+    ACCESSOR = "accessor",
+    READER = "reader",
+    WRITER = "writer",
+    DOCUMENT = "document",
+    TYPE = "type",
+    VISIBILITY = "visibility",
 }
 
 ---@alias TokenType.Type
+---| '""'
 ---| '"("'
 ---| '")"'
 ---| '":"'
@@ -144,9 +179,18 @@ local TokenType = {
 ---| '"AND"'
 ---| '"T"'
 ---| '"NIL"'
+---| '"initform"'
+---| '"initarg"'
+---| '"accessor"'
+---| '"reader"'
+---| '"writer"'
+---| '"document"'
+---| '"type"'
+---| '"visibility"'
 
 
 return {
     TokenType = TokenType,
     KEYWORDS = KEYWORDS,
+    SlotKeywords = SlotKeywords,
 }

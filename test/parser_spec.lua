@@ -28,6 +28,8 @@ describe("Parser tests", function()
             AST.RationalConstant:new({ value = VALUE.Rational:new({ numerator = 1, denominator = 2 }) }))
         TEST_AST([[#\A]], AST.CharacterConstant:new({ value = VALUE.Character:new({ chars = [[#\A]] }) }))
         TEST_AST([["1"]], AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "1" }) }))
+        TEST_AST([[T]], AST.TrueConstant:new({}))
+        TEST_AST([[NIL]], AST.NilConstant:new({}))
     end)
 
     it("Variable AST", function()
@@ -311,6 +313,97 @@ describe("Parser tests", function()
                             },
                         }),
                         params = {},
+                    })
+                )
+            end)
+        end)
+
+        context("IfCall AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    "(if () () ())",
+                    AST.IfCall:new({
+                        condition = AST.Empty:new({}),
+                        thenExpr  = AST.Empty:new({}),
+                        elseExpr  = AST.Empty:new({}),
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    "(if a (print x) (print 2))",
+                    AST.IfCall:new({
+                        condition = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                        thenExpr  = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                            params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                        }),
+                        elseExpr  = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                            params = { AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }) },
+                        }),
+                    })
+                )
+            end)
+        end)
+        context("ClassDeclaration AST", function()
+            test("all expr empty", function()
+                TEST_AST(
+                    "(defclass person ()())",
+                    AST.ClassDeclaration:new({
+                        name         = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                        superClasses = {},
+                        slots        = {}
+                    })
+                )
+            end)
+            test("all expr not empty", function()
+                TEST_AST(
+                    [[
+                    (defclass person (Base1 Base2)
+                    ((name
+                        :initarg :name
+                        :accessor name
+                        :reader getName
+                        :writer setName
+                        :initform T
+                        :document "person"
+                        :type integer
+                        :visibility public
+                        )
+                    (lisper
+                        :initform nil
+                        :accessor lisper)))
+                    ]],
+                    AST.ClassDeclaration:new({
+                        name         = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                        superClasses = {
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base1" }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base2" }) }),
+                        },
+                        slots        = {
+                            AST.SlotDeclaration:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+                                initarg = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+                                initform = AST.TrueConstant:new({}),
+                                accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+                                reader = AST.Variable:new({ value = VALUE.Symbol:new({ name = "getName" }) }),
+                                writer = AST.Variable:new({ value = VALUE.Symbol:new({ name = "setName" }) }),
+                                document = AST.StringConstant:new({
+                                    value = VALUE.SimpleBaseString:new({
+                                        stringValue =
+                                        "person"
+                                    })
+                                }),
+                                type = AST.Variable:new({ value = VALUE.Symbol:new({ name = "integer" }) }),
+                                visibility = AST.Variable:new({ value = VALUE.Symbol:new({ name = "public" }) }),
+                            }),
+                            AST.SlotDeclaration:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
+                                initform = AST.NilConstant:new({}),
+                                accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
+                            })
+                        }
                     })
                 )
             end)

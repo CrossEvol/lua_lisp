@@ -13,6 +13,14 @@ describe("Lexer tests", function()
             assert_equal(token.type, token_type)
             assert_equal(token.value.classType, class_type)
         end
+
+        TEST_NEXT_SLOT_PARAM_TOKEN = function(text, token_type, class_type)
+            local lexer = Lexer:new({ text = text })
+            local token = lexer:nextToken()
+            token = lexer:nextToken()
+            assert_equal(token.type, token_type)
+            assert_equal(token.value.classType, class_type)
+        end
     end)
 
     it("this is a auxiliary", function()
@@ -57,6 +65,17 @@ describe("Lexer tests", function()
         TEST_NEXT_TOKEN([[AND]], TokenType.AND, BUILT_IN_CLASS.AUXILIARY)
         TEST_NEXT_TOKEN([[T]], TokenType.T, BUILT_IN_CLASS.AUXILIARY)
         TEST_NEXT_TOKEN([[NIL]], TokenType.NIL, BUILT_IN_CLASS.AUXILIARY)
+    end)
+
+    it("this is a slot keyword", function()
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:initform]], TokenType.INITFORM, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:initarg]], TokenType.INITARG, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:accessor]], TokenType.ACCESSOR, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:reader]], TokenType.READER, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:writer]], TokenType.WRITER, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:document]], TokenType.DOCUMENT, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:type]], TokenType.TYPE, BUILT_IN_CLASS.AUXILIARY)
+        TEST_NEXT_SLOT_PARAM_TOKEN([[:visibility]], TokenType.VISIBILITY, BUILT_IN_CLASS.AUXILIARY)
     end)
 
     it("this is a number", function()
