@@ -140,10 +140,12 @@ function Lexer:number()
     local numberString = ''
     local isFloat = false
     local isRational = false
+    local isNegative = false
     while true do
         if self:currentChar() == TokenType.NEGATIVE or self:currentChar() == TokenType.POSITIVE then
             if self:currentChar() == TokenType.NEGATIVE then
                 numberString = numberString .. self:currentChar()
+                isNegative = true
             end
             self:advance()
         end
@@ -178,18 +180,7 @@ function Lexer:number()
                 numberString = numberString .. self:currentChar()
                 self:advance()
             end
-            if self:currentChar() == '' or self:currentChar() == ' ' then
-                local numerator, denominator = string.match(numberString, '(%d+)/(%d+)')
-                numerator = tonumber(numerator)
-                denominator = tonumber(denominator)
-                return Token:new({
-                    type = TokenType.RATIONAL,
-                    value = Rational:new({ numerator = numerator, denominator = denominator }),
-                    lineNo =
-                        self.lineNo,
-                    columnNo = self.columnNo
-                })
-            end
+            isRational = true
         end
 
         if self:currentChar() == TokenType.DOT then
@@ -230,7 +221,7 @@ function Lexer:number()
 
     if isRational then
         local numerator, denominator = string.match(numberString, '(%d+)/(%d+)')
-        numerator = tonumber(numerator)
+        numerator = isNegative and -tonumber(numerator) or tonumber(numerator)
         denominator = tonumber(denominator)
 
         if numerator == 0 then
@@ -268,6 +259,7 @@ function Lexer:number()
     })
 end
 
+---TODO: character not only three length, but also #\Space or #\Null
 ---@return Token
 function Lexer:characterConstant()
     local str = ''

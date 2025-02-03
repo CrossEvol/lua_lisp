@@ -37,6 +37,21 @@ describe("Parser tests", function()
         }))
     end)
 
+    it("SimpleVector AST", function()
+        TEST_AST([[#()]], AST.FunctionCall:new({
+            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
+            params = {}
+        }))
+        TEST_AST([[#(1 a b)]], AST.FunctionCall:new({
+            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
+            params = {
+                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+            }
+        }))
+    end)
+
     it("Constant AST", function()
         TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }))
         TEST_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }))

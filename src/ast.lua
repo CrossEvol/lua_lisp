@@ -3,7 +3,7 @@ local VALUE = require("src.builtin_class")
 ---@class AST_TYPE
 local AST_TYPE = {
     AST = "AST",
-    PROGRAM = "PROGRAM",
+    PROGRAM = "Program",
     EXPR = "Expr",
     EMPTY = "Empty",
     CONSTANT = "Constant",
@@ -14,8 +14,8 @@ local AST_TYPE = {
     INTEGER_CONSTANT = "IntegerConstant",
     FLOAT_CONSTANT = "FloatConstant",
     RATIONAL_CONSTANT = "RationalConstant",
-    CHARACTER_CONSTANT = "Constant",
-    STRING_CONSTANT = "Constant",
+    CHARACTER_CONSTANT = "CharacterConstant",
+    STRING_CONSTANT = "StringConstant",
     DECLARATION = "Declaration",
     VARIABLE_DECLARATION = "VariableDeclaration",
     LET_DECLARATION = "LetDeclaration",
@@ -684,9 +684,6 @@ function LambdaDeclaration.__eq(obj1, obj2)
     end
     return true
 end
-
----@class Definition : Expr
-Definition = Expr:new({ astType = AST_TYPE.DEFINITION })
 
 ---@class FunctionCall : Expr
 ---@field value Function

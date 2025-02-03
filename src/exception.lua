@@ -39,10 +39,16 @@ LexerError = Error:new({ type = ErrorType.LexerError })
 ParserError = Error:new({ type = ErrorType.ParserError })
 
 ---@class InterpreterError : Error
-InterpreterError = Error:new({ type = ErrorType.InterpreterError })
+---@field lineNo nil
+---@field columnNo nil
+InterpreterError = Error:new({
+    type = ErrorType.InterpreterError,
+    lineNo = nil,
+    columnNo = nil,
+})
 
 return {
-    LexerError = LexerError,
-    ParserError = ParserError,
+    LexerError       = LexerError,
+    ParserError      = ParserError,
     InterpreterError = InterpreterError,
 }

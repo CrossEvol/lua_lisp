@@ -181,12 +181,15 @@ end
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | T | NIL | quoteList | quoteType | variable
+        number | character | string | T | NIL | quoteList | quoteSymbol |sharpList |  variable
+
+    sharpVector :
+        SHARP params
 
     quoteList :
         SINGLE_QUOTE params
 
-    quoteType :
+    quoteSymbol :
         SINGLE_QUOTE ID
 
     variable:
@@ -580,7 +583,7 @@ end
 function Parser:mapCall()
     self:consume(TokenType.LPAREN)
     self:consume(TokenType.MAP)
-    local returnType = self:quoteType()
+    local returnType = self:quoteSymbol()
     local lambdaDecl = self:lambdaDeclaration()
     local list = self:expr()
     self:consume(TokenType.RPAREN)
@@ -702,9 +705,12 @@ function Parser:factor()
             local list = self:quoteList()
             return list
         else
-            local type = self:quoteType()
+            local type = self:quoteSymbol()
             return type
         end
+    elseif token.type == TokenType.SHARP then
+        local vector = self:sharpVector()
+        return vector
     elseif token.type == TokenType.ID then
         local variable = self:variable()
         return variable
@@ -740,7 +746,7 @@ function Parser:quoteList()
 end
 
 --- @return Expr
-function Parser:quoteType()
+function Parser:quoteSymbol()
     self:consume(TokenType.SINGLE_QUOTE)
     local typeName = self:variable()
     if typeName.value.classType == VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
@@ -748,6 +754,24 @@ function Parser:quoteType()
         typeName.value = VALUE.Symbol:new({ name = typeName.value.name })
     end
     return typeName
+end
+
+--- @return Expr
+function Parser:sharpVector()
+    self:consume(TokenType.SHARP)
+    self:consume(TokenType.LPAREN)
+    local params = {}
+    while self:currentToken().type ~= TokenType.RPAREN do
+        local param = self:expr()
+        table.insert(params, param)
+    end
+    self:consume(TokenType.RPAREN)
+
+    local funcCall = AST.FunctionCall:new({
+        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
+        params = params,
+    })
+    return funcCall
 end
 
 --- @return Expr

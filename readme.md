@@ -10,4 +10,15 @@ but the function in common lisp, have the same formula as the keyword
 deal with them in the same way is reasonable.
 maybe should recognize keyword like 'defclass' , 'defmethod' as builtin function ?
 
-    
+## Arithmetic operation 
+do not care about divide by zero
+do not care about reduction
+ 
+## round function
+`ceiling` , `floor` , `round` , `truncate` can receive two parameters, but this impl only accept one param.
+
+## code-char function
+<0, NIL
+0-31 && 127, lookup table
+32-126 , convert to #\a
+gt 128 , toUnicodePoint

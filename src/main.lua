@@ -120,7 +120,10 @@
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | T | NIL | quoteList | quoteType | variable
+        number | character | string | T | NIL | quoteList | quoteType |sharpList |  variable
+
+    sharpVector :
+        SHARP params
 
     quoteList :
         SINGLE_QUOTE params
@@ -138,43 +141,34 @@
 
 local Lexer = require("src.lexer").Lexer
 local Parser = require("src.parser").Parser
+local Interpreter = require("src.interpreter").Interpreter
 local NativeMethod = require("src.builtin_function").NativeMethod
 local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-              (map 'list (lambda () ()) '())
+                    (defvar m (make-hash-table))
+                    (setf (gethash 'a m) 1 )
+                    (remhash 'a m)
 ]]
+
 
 local lexer = Lexer:new({ text = text })
 local parser = Parser:new({ lexer = lexer })
-local ast = parser:parse().expressions[1]
-print(ast)
-print(ast.astType)
-print(ast.value)
-print(ast.value.astType)
-local expect = AST.MapCall:new({
-    returnType = AST.Variable:new({ value = VALUE.Symbol:new({ name = "list" }) }),
-    lambda = AST.LambdaDeclaration:new({
-        params = {},
-        expressions = {
-            AST.Empty:new({}),
-        },
-    }),
-    list = AST.FunctionCall:new({
-        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
-        params = {}
-    }),
-})
-print(ast == expect)
-
-
--- ====================================>
-
--- local text = [[:initform]]
--- local lexer = Lexer:new({ text = text })
--- local token = lexer:nextToken()
--- token = lexer:nextToken()
--- print(token)
--- print(token.type)
--- print(token.value.classType)
+local interpreter = Interpreter:new({})
+local ast = parser:parse()
+local results = interpreter:interpret(ast)
+print(results)
+local expects = {
+    VALUE.Symbol:new({ name = "m" }),
+    VALUE.FixNum:new({ intValue = 1 }),
+    VALUE.True:new({})
+}
+local flag    = true
+for i = 1, #results do
+    if results[i] ~= expects[i] then
+        print(false)
+        flag = false
+    end
+end
+print(flag)
