@@ -312,7 +312,7 @@ end
 
 ---@class LetDeclaration : Expr
 ---@field value nil
----@field params table<Variable, integer>
+---@field params table<VariableDeclaration, integer>
 ---@field expressions table<Expr, integer>
 LetDeclaration = Expr:new({
     astType     = AST_TYPE.LET_DECLARATION,

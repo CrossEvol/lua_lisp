@@ -52,10 +52,10 @@ describe("Parser tests", function()
 
 
 
-    it("interpreter Empty", function()
+    it("interpret Empty", function()
         TEST_INTERPRETER("()", VALUE.Null:new({}))
     end)
-    it("interpreter Constant", function()
+    it("interpret Constant", function()
         TEST_INTERPRETER([[1]], VALUE.FixNum:new({ intValue = 1 }))
         TEST_INTERPRETER([[1.0]], VALUE.SingleFloat:new({ floatValue = 1.0 }))
         TEST_INTERPRETER([[1/2]], VALUE.Rational:new({ numerator = 1, denominator = 2 }))
@@ -65,12 +65,62 @@ describe("Parser tests", function()
         TEST_INTERPRETER([[NIL]], VALUE.Null:new({}))
     end)
 
-    it("interpreter Declaration", function()
-        TEST_INTERPRETER([[(defvar a 1) a]], VALUE.Symbol:new({ name = "a" }), VALUE.FixNum:new({ intValue = 1 }))
-        TEST_INTERPRETER([[(defconstant b 2) b]], VALUE.Symbol:new({ name = "b" }), VALUE.FixNum:new({ intValue = 2 }))
-        TEST_INTERPRETER([[(defparameter c 3) c]], VALUE.Symbol:new({ name = "c" }), VALUE.FixNum:new({ intValue = 3 }))
+    context("interpret Declaration", function()
+        it("VariableDeclaration", function()
+            TEST_INTERPRETER([[(defvar a 1) a]], VALUE.Symbol:new({ name = "a" }), VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[(defconstant b 2) b]], VALUE.Symbol:new({ name = "b" }),
+                VALUE.FixNum:new({ intValue = 2 }))
+            TEST_INTERPRETER([[(defparameter c 3) c]], VALUE.Symbol:new({ name = "c" }),
+                VALUE.FixNum:new({ intValue = 3 }))
+        end)
+        it("LetDeclaration", function()
+            TEST_INTERPRETER([[(let ())]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[(let ()())]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+            (let ((a 1)(b 2))
+                ()
+            )
+            ]],
+                VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+            (let ((a 1))
+                (print a)
+            )
+            ]],
+                VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[
+            (defvar a 1)
+            (let ((a 2))
+                (print a)
+            )
+            ]],
+                VALUE.Symbol:new({ name = "a" }),
+                VALUE.FixNum:new({ intValue = 2 }))
+            TEST_INTERPRETER([[
+            (let ((a 1))
+                (let ((a 2))
+                    (let ((a 3))
+                        (print a)
+                    )
+                )
+            )
+            ]],
+                VALUE.FixNum:new({ intValue = 3 }))
+            TEST_INTERPRETER([[
+            (let ((a 1))
+                (let ((a 2))
+                    (let ((a 3))
+                        (print a)
+                    )
+                    (print a)
+                )
+                (print a)
+            )
+            ]],
+                VALUE.FixNum:new({ intValue = 1 }))
+        end)
     end)
-    context("interpreter BuiltinFunction", function()
+    context("interpret BuiltinFunction", function()
         it("print", function()
             TEST_INTERPRETER([[(print 1)]], VALUE.FixNum:new({ intValue = 1 }))
             TEST_INTERPRETER([[(defvar a 2)(print a)]], VALUE.Symbol:new({ name = "a" }),

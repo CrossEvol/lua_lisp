@@ -6,16 +6,75 @@ local VALUE = require("src.builtin_class")
 local Parser = require("src.parser").Parser
 local Util = require("src.util")
 
+---@class LocalVars
+---@field entries table<string, T>
+---@field outer LocalVars | nil
+LocalVars = {
+    entries = {},
+    outer = nil,
+}
+
+---@param o table
+---@return LocalVars
+function LocalVars:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---@param key T
+---@param value T
+---@return nil
+function LocalVars:add(key, value)
+    self.entries[key:asKey()] = value
+end
+
+---@param key T
+---@return any
+function LocalVars:get(key)
+    local result = self.entries[key:asKey()]
+    if result == nil then
+        if self.outer ~= nil then
+            return self.outer:get(key)
+        else
+            return nil
+        end
+    else
+        return result
+    end
+end
+
+---@param key Symbol
+---@return nil
+function LocalVars:remove(key)
+    self.entries[key:asKey()] = nil
+end
+
 ---@class Interpreter
 ---@field globals table<string , any>
+---@field localVars LocalVars
 ---@field isDeclaring boolean
 Interpreter = {
     globals = {},
+    localVars = LocalVars:new({}),
     isDeclaring = false,
 }
 
+
 function Interpreter:toggleDeclaring()
     self.isDeclaring = not self.isDeclaring
+end
+
+---@return nil
+function Interpreter:enterScope()
+    local localVars = LocalVars:new({ entries = {}, outer = self.localVars })
+    self.localVars = localVars
+end
+
+---@return nil
+function Interpreter:leaveScope()
+    self.localVars = self.localVars.outer
 end
 
 ---@param key T
@@ -131,7 +190,6 @@ function Interpreter:visitNilConstant(constant)
     return VALUE.Null:new({})
 end
 
----the most nested will be a.b, if b is a hash, it will be allocated in the globals
 ---if want to call a.b.c, then the expr will be (gethash 'c (gethash 'b a))
 ---obviously, here has generated result twice
 ---@param variable Variable
@@ -141,14 +199,9 @@ function Interpreter:visitVariable(variable)
         return variable.value
     end
 
-    local key = variable.value:asKey()
-    if string.find(key, "%.") == nil then
-        return self.globals[key]
-    else
-        local keys = Util.split_by_dot(key)
-        local v1 = self.globals[keys[1]]
-        return v1[keys[2]]
-    end
+    local key = variable.value
+    local localVar = self.localVars:get(key)
+    return localVar ~= nil and localVar or self:get(key)
 end
 
 ---@param declaration VariableDeclaration
@@ -165,7 +218,21 @@ end
 ---@param declaration LetDeclaration
 ---@return T
 function Interpreter:visitLetDeclaration(declaration)
-    return {}
+    self:enterScope()
+    for i = 1, #declaration.params, 1 do
+        self:toggleDeclaring()
+        local varName = self:visit(declaration.params[i].name)
+        self:toggleDeclaring()
+        local varValue = self:visit(declaration.params[i].value)
+        self.localVars:add(varName, varValue)
+    end
+    local result = VALUE.Null:new({})
+    for i = 1, #declaration.expressions, 1 do
+        result = self:visit(declaration.expressions[i])
+    end
+
+    self:leaveScope()
+    return result
 end
 
 ---@param ifCall IfCall

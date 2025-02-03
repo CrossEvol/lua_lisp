@@ -147,9 +147,7 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-                    (defvar m (make-hash-table))
-                    (setf (gethash 'a m) 1 )
-                    (remhash 'a m)
+(let ((a 1))(print a))
 ]]
 
 
