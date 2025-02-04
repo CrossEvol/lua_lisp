@@ -385,13 +385,13 @@ end
 
 ---@class FuncDeclaration : Declaration
 ---@field value nil
----@field name Expr
----@field params table<Variable, integer>
+---@field name Variable
+---@field params table<VariableDeclaration, Expr>
 ---@field expressions table<Expr, integer>
 FuncDeclaration = Declaration:new({
     astType = AST_TYPE.FUNC_DECLARATION,
     value = nil,
-    name = Expr:new({}),
+    name = Variable:new({}),
     params = {},
     expressions = {},
 })
@@ -611,7 +611,7 @@ end
 ---@field value nil
 ---@field name Variable
 ---@field documentation StringConstant
----@field params table<Variable, integer>
+---@field params table<VariableDeclaration, integer>
 GenericDeclaration = Declaration:new({
     astType = AST_TYPE.GENERIC_DECLARATION,
     value = nil,
@@ -648,7 +648,7 @@ end
 
 ---@class LambdaDeclaration : Declaration
 ---@field value nil
----@field params table<Variable, integer>
+---@field params table<VariableDeclaration, integer>
 ---@field expressions table<Expr, integer>
 LambdaDeclaration = Declaration:new({
     astType = AST_TYPE.LAMBDA_DECLARATION,
@@ -686,7 +686,7 @@ function LambdaDeclaration.__eq(obj1, obj2)
 end
 
 ---@class FunctionCall : Expr
----@field value Function
+---@field value Function | Symbol
 ---@field params table<Expr, integer>
 FunctionCall = Expr:new({ astType = AST_TYPE.FUNCTION_CALL, params = {} })
 

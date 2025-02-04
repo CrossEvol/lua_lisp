@@ -120,6 +120,80 @@ describe("Parser tests", function()
                 VALUE.FixNum:new({ intValue = 1 }))
         end)
     end)
+    context("interpret Function", function()
+        it("UserDefinedFunction", function()
+            TEST_INTERPRETER_ERROR([[
+            (defun f1 (a b))
+            (f1)
+        ]])
+            TEST_INTERPRETER_ERROR([[
+            (defun f1 (a b))
+            (f1 1)
+        ]])
+            TEST_INTERPRETER_ERROR([[
+            (defun f1 (a b))
+            (f1 1 2 3)
+        ]])
+            -- TODO: should be wrong in common lisp
+            TEST_INTERPRETER([[
+            (defun f1 ())
+            f1
+        ]],
+                VALUE.Symbol:new({ name = "f1" }), VALUE.UserDefinedFunction:new({
+                    params = {},
+                    expressions = {},
+                }))
+            TEST_INTERPRETER([[
+            (defun f1 ())
+            (f1)
+        ]],
+                VALUE.Symbol:new({ name = "f1" }), VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+            (defun f1 ()())
+            (f1)
+        ]],
+                VALUE.Symbol:new({ name = "f1" }), VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+            (defun f1 (a b)()(print a))
+            (f1 1 2)
+        ]],
+                VALUE.Symbol:new({ name = "f1" }), VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[
+            (defun f1 (a b)()(print a)(print b))
+            (f1 1 2)
+        ]],
+                VALUE.Symbol:new({ name = "f1" }), VALUE.FixNum:new({ intValue = 2 }))
+            TEST_INTERPRETER([[
+            (defun f1 (a b)(+ a b))
+            (f1 1 2)
+        ]],
+                VALUE.Symbol:new({ name = "f1" }), VALUE.FixNum:new({ intValue = 3 }))
+        end)
+        it("LambdaFunction", function()
+            TEST_INTERPRETER_ERROR([[((lambda ()()) 1)]])
+            TEST_INTERPRETER_ERROR([[((lambda (a b)()) 1)]])
+            TEST_INTERPRETER_ERROR([[((lambda (a b)()) 1 2 3)]])
+            TEST_INTERPRETER([[((lambda ()))]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[((lambda ()()))]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[(defvar l1 (lambda ()()))]], VALUE.Symbol:new({ name = "l1" }))
+            TEST_INTERPRETER([[(defvar l1 (lambda ())) l1]],
+                VALUE.Symbol:new({ name = "l1" }),
+                VALUE.LambdaFunction:new({ params = {}, expressions = {} })
+            )
+            TEST_INTERPRETER([[(defvar l1 (lambda ()())) l1]],
+                VALUE.Symbol:new({ name = "l1" }),
+                VALUE.LambdaFunction:new({ params = {}, expressions = { AST.Empty:new({}) } })
+            )
+            TEST_INTERPRETER([[((lambda (a b) a) 1 2)]], VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[((lambda (a b) a (print b)) 1 2)]], VALUE.FixNum:new({ intValue = 2 }))
+            TEST_INTERPRETER([[((lambda (a b)(+ a b)) 1 2)]], VALUE.FixNum:new({ intValue = 3 }))
+            TEST_INTERPRETER(
+                [[(defvar c 3)((lambda (a b)(+ a b c)) 1 2)]],
+                VALUE.Symbol:new({ name = "c" }),
+                VALUE.FixNum:new({ intValue = 6 })
+            )
+        end)
+    end)
     context("interpret BuiltinFunction", function()
         it("print", function()
             TEST_INTERPRETER([[(print 1)]], VALUE.FixNum:new({ intValue = 1 }))

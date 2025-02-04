@@ -264,8 +264,14 @@ describe("Parser tests", function()
                     AST.FuncDeclaration:new({
                         name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
                         params = {
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
+                            AST.VariableDeclaration:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                                value = AST.Empty:new({}),
+                            }),
+                            AST.VariableDeclaration:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
+                                value = AST.Empty:new({}),
+                            }),
                         },
                         expressions = {},
                     })
@@ -314,8 +320,14 @@ describe("Parser tests", function()
                     AST.LambdaCall:new({
                         value = AST.LambdaDeclaration:new({
                             params = {
-                                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }),
-                                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'y' }) }),
+                                AST.VariableDeclaration:new({
+                                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }),
+                                    value = AST.Empty:new({}),
+                                }),
+                                AST.VariableDeclaration:new({
+                                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'y' }) }),
+                                    value = AST.Empty:new({}),
+                                }),
                             },
                             expressions = {},
                         }),
@@ -713,7 +725,10 @@ describe("Parser tests", function()
                     AST.MapcarCall:new({
                         lambda = AST.LambdaDeclaration:new({
                             params = {
-                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+                                AST.VariableDeclaration:new({
+                                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+                                    value = AST.Empty:new({}),
+                                }),
                             },
                             expressions = {
                                 AST.FunctionCall:new({

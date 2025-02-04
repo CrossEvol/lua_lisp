@@ -147,7 +147,7 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-(let ((a 1))(print a))
+(if T 1 2)
 ]]
 
 
@@ -158,9 +158,7 @@ local ast = parser:parse()
 local results = interpreter:interpret(ast)
 print(results)
 local expects = {
-    VALUE.Symbol:new({ name = "m" }),
-    VALUE.FixNum:new({ intValue = 1 }),
-    VALUE.True:new({})
+    VALUE.Symbol:new({ name = "l1" }),
 }
 local flag    = true
 for i = 1, #results do

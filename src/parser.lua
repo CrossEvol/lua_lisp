@@ -10,11 +10,13 @@ local VALUE = require("src.builtin_class")
 ---@field token Token
 ---@field currentAST AST
 ---@field inLetScope boolean
+---@field isDeclaring boolean
 Parser = {
     lexer = Lexer:new({ text = "" }),
     token = Token:new({}),
     currentAST = AST.AST:new({}),
-    inLetScope = false
+    inLetScope = false,
+    isDeclaring = false,
 }
 
 
@@ -25,6 +27,11 @@ function Parser:new(o)
     self.__index = self
     setmetatable(o, self)
     return o
+end
+
+---@return nil
+function Parser:toggleDeclaring()
+    self.isDeclaring = not self.isDeclaring
 end
 
 ---@return Token
@@ -287,14 +294,24 @@ function Parser:block()
     return expressions
 end
 
----@return table<Variable, integer>
+---@return table<VariableDeclaration, integer>
 function Parser:params()
     self:consume(TokenType.LPAREN)
     local params = {}
     while self:currentToken().type == TokenType.ID do
-        table.insert(params, AST.Variable:new({
-            value = self:currentToken().value
-        }))
+        local param = self.isDeclaring
+            and
+            AST.VariableDeclaration:new({
+                name = AST.Variable:new({
+                    value = self:currentToken().value
+                }),
+                value = AST.Empty:new({}),
+            })
+            or
+            AST.Variable:new({
+                value = self:currentToken().value
+            })
+        table.insert(params, param)
         self:consume(TokenType.ID)
     end
     self:consume(TokenType.RPAREN)
@@ -359,7 +376,9 @@ end
 function Parser:lambdaDeclaration()
     self:consume(TokenType.LPAREN)
     self:consume(TokenType.LAMBDA)
+    self:toggleDeclaring()
     local params = self:params()
+    self:toggleDeclaring()
     local expressions = self:block()
     self:consume(TokenType.RPAREN)
 
@@ -376,12 +395,14 @@ function Parser:funcDeclaration()
     self:consume(TokenType.LPAREN)
     self:consume(TokenType.DEFUN)
     local varName = self:variable()
-    local params = self:params()
+    self:toggleDeclaring()
+    local variables = self:params()
+    self:toggleDeclaring()
     local expressions = self:block()
     self:consume(TokenType.RPAREN)
     local funcDecl = AST.FuncDeclaration:new({
         name = varName,
-        params = params,
+        params = variables,
         expressions = expressions,
 
     })
@@ -488,6 +509,7 @@ function Parser:genericDeclaration()
     self:consume(TokenType.LPAREN)
     self:consume(TokenType.DEFGENERIC)
     local name = self:variable()
+
     local params = self:params()
 
     self:consume(TokenType.LPAREN)

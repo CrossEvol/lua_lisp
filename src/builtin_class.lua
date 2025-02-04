@@ -3,33 +3,35 @@ local Util = require("src.util")
 
 ---@class BUILT_IN_CLASS
 local BUILT_IN_CLASS = {
-    T = 'T',
-    VALUE_TYPE = 'ValueType',
-    STANDARD_OBJECT = 'StandardObject',
-    STRUCTURE_OBJECT = 'StructureObject',
-    CLASS = 'Class',
-    GENERIC_FUNCTION = 'GenericFunction',
-    METHOD = 'Method',
-    TRUE = 'True',
-    NULL = 'Null',
-    FUNCTION = 'Function',
-    BUILT_IN_FUNCTION = 'BuiltinFunction',
-    SYMBOL = 'Symbol',
-    NUMBER = 'Number',
-    FIX_NUM = 'FixNum',
-    INTEGER = 'Integer',
-    FLOAT = 'Float',
-    SINGLE_FLOAT = 'SingleFloat',
-    RATIONAL = 'Rational',
-    CHARACTER = 'Character',
-    STRING = 'String',
-    SIMPLE_BASE_STRING = 'SIMPLE-BASE-STRING',
-    LIST = 'List',
-    CONS = 'Cons',
-    SIMPLE_VECTOR = 'SimpleVector',
-    HASH_TABLE = 'HashTable',
-    AUXILIARY = 'Auxiliary',
-    VALUE = 'Value',
+    T                     = 'T',
+    VALUE_TYPE            = 'ValueType',
+    STANDARD_OBJECT       = 'StandardObject',
+    STRUCTURE_OBJECT      = 'StructureObject',
+    CLASS                 = 'Class',
+    GENERIC_FUNCTION      = 'GenericFunction',
+    METHOD                = 'Method',
+    TRUE                  = 'True',
+    NULL                  = 'Null',
+    FUNCTION              = 'Function',
+    USER_DEFINED_FUNCTION = 'UserDefinedFunction',
+    BUILT_IN_FUNCTION     = 'BuiltinFunction',
+    LAMBDA_FUNCTION       = 'LambdaFunction',
+    SYMBOL                = 'Symbol',
+    NUMBER                = 'Number',
+    FIX_NUM               = 'FixNum',
+    INTEGER               = 'Integer',
+    FLOAT                 = 'Float',
+    SINGLE_FLOAT          = 'SingleFloat',
+    RATIONAL              = 'Rational',
+    CHARACTER             = 'Character',
+    STRING                = 'String',
+    SIMPLE_BASE_STRING    = 'SIMPLE-BASE-STRING',
+    LIST                  = 'List',
+    CONS                  = 'Cons',
+    SIMPLE_VECTOR         = 'SimpleVector',
+    HASH_TABLE            = 'HashTable',
+    AUXILIARY             = 'Auxiliary',
+    VALUE                 = 'Value',
 }
 
 ---@alias BUILT_IN_CLASS.Type
@@ -44,7 +46,9 @@ local BUILT_IN_CLASS = {
 ---| '"True"'
 ---| '"Null"'
 ---| '"Function"'
+---| '"UserDefinedFunction"'
 ---| '"BuiltinFunction"'
+---| '"LambdaFunction"'
 ---| '"Symbol"'
 ---| '"Number"'
 ---| '"FixNum"'
@@ -191,7 +195,7 @@ function Null:asType()
     return ValueType:new({ typeName = "NULL" })
 end
 
----include user-defined function and builtin function, builtin should have preference than user-defined
+---include user-defined function and builtin function
 ---@class Function : T
 ---@field func function
 Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, func = function() end })
@@ -217,6 +221,45 @@ function Function.__eq(obj1, obj2)
     return obj1.func == obj2.func
 end
 
+---@class UserDefinedFunction : Function
+---@field func nil
+---@field params table<VariableDeclaration, integer>
+---@field expressions table<Expr, integer>
+UserDefinedFunction = T:new({
+    classType = BUILT_IN_CLASS.USER_DEFINED_FUNCTION,
+    func = nil,
+    params = {},
+    expressions = {},
+})
+
+---@param obj1 UserDefinedFunction
+---@param obj2 UserDefinedFunction
+function UserDefinedFunction.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    if #obj1.params ~= #obj2.params then
+        return false
+    end
+    for i = 1, #obj1.params, 1 do
+        if obj1.params[i] ~= obj2.params[i] then
+            return false
+        end
+    end
+    if #obj1.expressions ~= #obj2.expressions then
+        return false
+    end
+    for i = 1, #obj1.expressions, 1 do
+        if obj1.expressions[i] ~= obj2.expressions[i] then
+            return false
+        end
+    end
+    return true
+end
+
 ---@class BuiltinFunction : Function
 ---@field name string
 BuiltinFunction = Function:new({
@@ -224,10 +267,49 @@ BuiltinFunction = Function:new({
     name = "",
 })
 
----@param obj1 Function
----@param obj2 Function
+---@param obj1 BuiltinFunction
+---@param obj2 BuiltinFunction
 function BuiltinFunction.__eq(obj1, obj2)
     return Function.__eq(obj1, obj2)
+end
+
+---@class LambdaFunction : Function
+---@field func nil
+---@field params table<VariableDeclaration, integer>
+---@field expressions table<Expr, integer>
+LambdaFunction = T:new({
+    classType = BUILT_IN_CLASS.LAMBDA_FUNCTION,
+    func = nil,
+    params = {},
+    expressions = {},
+})
+
+---@param obj1 LambdaFunction
+---@param obj2 LambdaFunction
+function LambdaFunction.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    if #obj1.params ~= #obj2.params then
+        return false
+    end
+    for i = 1, #obj1.params, 1 do
+        if obj1.params[i] ~= obj2.params[i] then
+            return false
+        end
+    end
+    if #obj1.expressions ~= #obj2.expressions then
+        return false
+    end
+    for i = 1, #obj1.expressions, 1 do
+        if obj1.expressions[i] ~= obj2.expressions[i] then
+            return false
+        end
+    end
+    return true
 end
 
 ---@class Symbol : T
@@ -945,7 +1027,9 @@ return {
     GenericFunction = GenericFunction,
     Method = Method,
     Function = Function,
+    UserDefinedFunction = UserDefinedFunction,
     BuiltinFunction = BuiltinFunction,
+    LambdaFunction = LambdaFunction,
     True = True,
     Null = Null,
     Class = Class,

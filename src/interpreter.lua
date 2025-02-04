@@ -121,14 +121,14 @@ end
 ---@param ast AST
 ---@return T
 function Interpreter:visitAST(ast)
-    return {}
+    return self:visit(ast)
 end
 
 ---useless
 ---@param expr Expr
 ---@return T
 function Interpreter:visitExpr(expr)
-    return {}
+    return self:visit(expr)
 end
 
 ---@param empty Empty
@@ -244,7 +244,15 @@ end
 ---@param declaration FuncDeclaration
 ---@return T
 function Interpreter:visitFuncDeclaration(declaration)
-    return {}
+    self:toggleDeclaring()
+    local funcName = self:visit(declaration.name)
+    self:toggleDeclaring()
+    local result = VALUE.UserDefinedFunction:new({
+        params = declaration.params,
+        expressions = declaration.expressions,
+    })
+    self:add(funcName, result)
+    return funcName
 end
 
 ---@param declaration SlotDeclaration
@@ -280,7 +288,11 @@ end
 ---@param declaration LambdaDeclaration
 ---@return T
 function Interpreter:visitLambdaDeclaration(declaration)
-    return {}
+    local lambdaDecl = VALUE.LambdaFunction:new({
+        params = declaration.params,
+        expressions = declaration.expressions,
+    })
+    return lambdaDecl
 end
 
 ---@param funcCall FunctionCall
@@ -293,14 +305,58 @@ function Interpreter:visitFunctionCall(funcCall)
             error(InterpreterError:new({}))
         end
         return result
+    elseif funcType == VALUE.BUILT_IN_CLASS.SYMBOL then
+        -- see lexer.lua `function Lexer:identifier()` :344
+        local funcName = funcCall.value
+        local func = self:get(funcName)
+        ---@diagnostic disable-next-line: undefined-field
+        local formalParams, expressions = func.params, func.expressions
+        local actualParams = funcCall.params
+        if #formalParams ~= #actualParams then
+            error(InterpreterError:new({}))
+        end
+        self:enterScope()
+        for i = 1, #formalParams, 1 do
+            self:toggleDeclaring()
+            local varName = self:visitVariable(formalParams[i].name)
+            self:toggleDeclaring()
+            local varValue = self:visitExpr(actualParams[i])
+            self.localVars:add(varName, varValue)
+        end
+        local result = VALUE.Null:new({})
+        for i = 1, #expressions, 1 do
+            result = self:interpret(expressions[i])
+        end
+        self:leaveScope()
+        return result
     end
-    return {}
+    error(InterpreterError:new({}))
 end
 
 ---@param lambdaCall LambdaCall
 ---@return T
 function Interpreter:visitLambdaCall(lambdaCall)
-    return {}
+    local lambdaDecl = self:visitLambdaDeclaration(lambdaCall.value)
+    ---@diagnostic disable-next-line: undefined-field
+    local formalParams, expressions = lambdaDecl.params, lambdaDecl.expressions
+    local actualParams = lambdaCall.params
+    if #formalParams ~= #actualParams then
+        error(InterpreterError:new({}))
+    end
+    self:enterScope()
+    for i = 1, #formalParams, 1 do
+        self:toggleDeclaring()
+        local varName = self:visitVariable(formalParams[i].name)
+        self:toggleDeclaring()
+        local varValue = self:visitExpr(actualParams[i])
+        self.localVars:add(varName, varValue)
+    end
+    local result = VALUE.Null:new({})
+    for i = 1, #expressions, 1 do
+        result = self:interpret(expressions[i])
+    end
+    self:leaveScope()
+    return result
 end
 
 ---@param doTimesCall DoTimesCall
