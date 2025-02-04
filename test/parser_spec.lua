@@ -364,6 +364,14 @@ describe("Parser tests", function()
         context("IfCall AST", function()
             test("all expr empty", function()
                 TEST_AST(
+                    "(if () ())",
+                    AST.IfCall:new({
+                        condition = AST.Empty:new({}),
+                        thenExpr  = AST.Empty:new({}),
+                        elseExpr  = AST.Empty:new({}),
+                    })
+                )
+                TEST_AST(
                     "(if () () ())",
                     AST.IfCall:new({
                         condition = AST.Empty:new({}),
@@ -631,6 +639,93 @@ describe("Parser tests", function()
                                 params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }), },
                             })
                         },
+                    })
+                )
+            end)
+        end)
+        context("LoopCall AST", function()
+            test("do when all expr empty", function()
+                TEST_AST(
+                    [[
+                        (loop for x in '()
+                            do ())
+                    ]],
+                    AST.LoopCall:new({
+                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        list      = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {},
+                        }),
+                        returnNil = true,
+                        body      = AST.Empty:new({}),
+                    })
+                )
+            end)
+            test("do when all expr not empty", function()
+                TEST_AST(
+                    [[
+                        (loop for x in '(1 2 3)
+                            do (print x))
+                    ]],
+                    AST.LoopCall:new({
+                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        list      = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 3 }) }),
+                            },
+                        }),
+                        returnNil = true,
+                        body      = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                            params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                        }),
+                    })
+                )
+            end)
+            test("collect when all expr empty", function()
+                TEST_AST(
+                    [[
+                        (loop for x in '()
+                            collect ())
+                    ]],
+                    AST.LoopCall:new({
+                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        list      = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {},
+                        }),
+                        returnNil = false,
+                        body      = AST.Empty:new({}),
+                    })
+                )
+            end)
+            test("collect when all expr not empty", function()
+                TEST_AST(
+                    [[
+                        (loop for x in '(1 2 3)
+                            collect (* x 10))
+                    ]],
+                    AST.LoopCall:new({
+                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        list      = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            params = {
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 3 }) }),
+                            },
+                        }),
+                        returnNil = false,
+                        body      = AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("*") }),
+                            params = {
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }),
+                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 10 }) }),
+                            }
+                        }),
                     })
                 )
             end)

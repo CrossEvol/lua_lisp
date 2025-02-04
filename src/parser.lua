@@ -562,7 +562,7 @@ function Parser:ifCall()
     self:consume(TokenType.IF)
     local condition = self:expr()
     local thenExpr = self:expr()
-    local elseExpr = self:expr()
+    local elseExpr = self:currentToken().type ~= TokenType.RPAREN and self:expr() or AST.Empty:new({})
     self:consume(TokenType.RPAREN)
     local ifCall = AST.IfCall:new({
         condition = condition,
@@ -576,6 +576,7 @@ end
 function Parser:loopCall()
     self:consume(TokenType.LPAREN)
     self:consume(TokenType.LOOP)
+    self:consume(TokenType.FOR)
     local item = self:variable()
     self:consume(TokenType.IN)
     local list = self:expr()

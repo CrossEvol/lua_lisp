@@ -61,7 +61,6 @@ Interpreter = {
     isDeclaring = false,
 }
 
-
 function Interpreter:toggleDeclaring()
     self.isDeclaring = not self.isDeclaring
 end
@@ -238,7 +237,14 @@ end
 ---@param ifCall IfCall
 ---@return T
 function Interpreter:visitIfCall(ifCall)
-    return {}
+    local flag = self:visit(ifCall.condition)
+    if flag.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+        local thenResult = self:visit(ifCall.thenExpr)
+        return thenResult
+    else
+        local elseResult = self:visit(ifCall.elseExpr)
+        return elseResult
+    end
 end
 
 ---@param declaration FuncDeclaration
@@ -348,7 +354,7 @@ function Interpreter:visitLambdaCall(lambdaCall)
         self:toggleDeclaring()
         local varName = self:visitVariable(formalParams[i].name)
         self:toggleDeclaring()
-        local varValue = self:visitExpr(actualParams[i])
+        local varValue = lambdaCall.primitive and self:visitExpr(actualParams[i]) or actualParams[i]
         self.localVars:add(varName, varValue)
     end
     local result = VALUE.Null:new({})
@@ -362,31 +368,181 @@ end
 ---@param doTimesCall DoTimesCall
 ---@return T
 function Interpreter:visitDoTimesCall(doTimesCall)
-    return {}
+    self:enterScope()
+    self:toggleDeclaring()
+    local loopSymbol = self:visit(doTimesCall.value)
+    self:toggleDeclaring()
+    self.localVars:add(loopSymbol, VALUE.FixNum:new({ intValue = 0 }))
+    local times = self:visit(doTimesCall.times)
+    if times.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+        error(InterpreterError:new({}))
+    end
+    ---@diagnostic disable-next-line: undefined-field
+    local intValue = times.intValue
+
+    if intValue <= 0 then
+        ;
+    else
+        local expressions = doTimesCall.expressions
+        for i = 1, intValue, 1 do
+            self.localVars:add(loopSymbol, VALUE.FixNum:new({ intValue = i - 1 }))
+            for _, value in ipairs(expressions) do
+                self:visit(value)
+            end
+        end
+        self:leaveScope()
+    end
+
+    return VALUE.Null:new({})
 end
 
 ---@param doListCall DoListCall
 ---@return T
 function Interpreter:visitDoListCall(doListCall)
-    return {}
+    self:enterScope()
+    self:toggleDeclaring()
+    local item = self:visit(doListCall.value)
+    self:toggleDeclaring()
+    self.localVars:add(item, VALUE.Null:new({}))
+    local list = self:visit(doListCall.list)
+    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+        error(InterpreterError:new({}))
+    end
+
+
+    local result = VALUE.Null:new({})
+    ---@diagnostic disable-next-line: undefined-field
+    local elements = list.elements
+    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
+        do end
+    elseif #elements == 0 then
+        do end
+    else
+        local expressions = doListCall.expressions
+        for _, element in ipairs(elements) do
+            self.localVars:add(item, element)
+            for _, expr in ipairs(expressions) do
+                self:visit(expr)
+            end
+        end
+    end
+
+    self:leaveScope()
+    return result
 end
 
 ---@param loopCall LoopCall
 ---@return T
 function Interpreter:visitLoopCall(loopCall)
-    return {}
+    self:enterScope()
+    self:toggleDeclaring()
+    local item = self:visit(loopCall.value)
+    self:toggleDeclaring()
+    self.localVars:add(item, VALUE.Null:new({}))
+    local list = self:visit(loopCall.list)
+    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+        error(InterpreterError:new({}))
+    end
+
+    ---@diagnostic disable-next-line: undefined-field
+    local elements = list.elements
+
+    local result = VALUE.Null:new({})
+    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
+        do end
+    elseif #elements == 0 then
+        do end
+    else
+        if loopCall.returnNil then
+            for _, element in ipairs(elements) do
+                self.localVars:add(item, element)
+                self:visit(loopCall.body)
+            end
+        else
+            local newElements = {}
+            for _, element in ipairs(elements) do
+                self.localVars:add(item, element)
+                table.insert(newElements, self:visit(loopCall.body))
+            end
+            result = VALUE.Cons:new({ elements = newElements })
+        end
+    end
+
+    self:leaveScope()
+    return result
 end
 
 ---@param mapCall MapCall
 ---@return T
 function Interpreter:visitMapCall(mapCall)
-    return {}
+    local list = self:visit(mapCall.list)
+    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+        error(InterpreterError:new({}))
+    end
+
+    ---@diagnostic disable-next-line: undefined-field
+    local elements = list.elements
+
+    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
+        return VALUE.Null:new({})
+    elseif #elements == 0 then
+        return VALUE.Null:new({})
+    else
+        local newElements = {}
+        for _, element in ipairs(elements) do
+            local lambdaCall = AST.LambdaCall:new({ value = mapCall.lambda, params = { element }, primitive = false })
+            table.insert(newElements, self:visit(lambdaCall))
+        end
+        self:toggleDeclaring()
+        local returnType = self:visit(mapCall.returnType)
+        self:toggleDeclaring()
+        ---@diagnostic disable-next-line: undefined-field
+        local returnTypeName = returnType.name
+        if returnTypeName == "list" then
+            return VALUE.Cons:new({ elements = newElements })
+        elseif returnTypeName == "vector" then
+            return VALUE.SimpleVector:new({ elements = newElements })
+        elseif returnTypeName == "string" then
+            local characters = {}
+            for _, character in ipairs(newElements) do
+                if character.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+                    error(InterpreterError:new({}))
+                end
+                local ch = string.sub(character.chars, 3)
+                if Util.is_utf8_code_point(ch) or string.len(ch) == 1 then
+                    table.insert(characters, ch)
+                end
+            end
+            return VALUE.SimpleBaseString:new({ stringValue = table.concat(characters, "") })
+        else
+            error(InterpreterError:new({}))
+        end
+    end
 end
 
 ---@param mapcarCall MapcarCall
 ---@return T
 function Interpreter:visitMapcarCall(mapcarCall)
-    return {}
+    local list = self:visit(mapcarCall.list)
+    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+        error(InterpreterError:new({}))
+    end
+
+    ---@diagnostic disable-next-line: undefined-field
+    local elements = list.elements
+
+    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
+        return VALUE.Null:new({})
+    elseif #elements == 0 then
+        return VALUE.Null:new({})
+    else
+        local newElements = {}
+        for _, element in ipairs(elements) do
+            local lambdaCall = AST.LambdaCall:new({ value = mapcarCall.lambda, params = { element }, primitive = false })
+            table.insert(newElements, self:visit(lambdaCall))
+        end
+        return VALUE.Cons:new({ elements = newElements })
+    end
 end
 
 return {

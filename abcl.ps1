@@ -1,3 +1,5 @@
+#!/user/bin/env pwsh
+
 # Set the JAVA_HOME environment variable
 $env:JAVA_HOME = "D:/DevTools/Java/jdk1.8.0_331"
 

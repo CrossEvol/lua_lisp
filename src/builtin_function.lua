@@ -174,7 +174,7 @@ end
 ---@return T
 local __list__function = function(interpreter, params)
     if #params == 0 then
-        return VALUE.Null:new({})
+        return VALUE.Null:new({ superClassType = VALUE.BUILT_IN_CLASS.LIST })
     end
 
     local elements = {}
@@ -958,15 +958,15 @@ local __code_char__function = function(interpreter, params)
     end
 
     if ASCII_I2XXI[intValue] ~= nil then
-        local result = VALUE.SimpleBaseString:new({ stringValue = [[#\]] .. ASCII_I2XXI[intValue] })
+        local result = VALUE.Character:new({ chars = [[#\]] .. ASCII_I2XXI[intValue] })
         return result
     end
     if 32 <= intValue and intValue <= 126 then
-        local result = VALUE.SimpleBaseString:new({ stringValue = [[#\]] .. string.char(intValue) })
+        local result = VALUE.Character:new({ chars = [[#\]] .. string.char(intValue) })
         return result
     end
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = [[#\]] .. toUnicodeCodepoint(intValue) })
+    local result = VALUE.Character:new({ chars = [[#\]] .. toUnicodeCodepoint(intValue) })
     return result
 end
 

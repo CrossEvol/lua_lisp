@@ -716,7 +716,8 @@ end
 ---@class LambdaCall : Expr
 ---@field value LambdaDeclaration
 ---@field params table<Expr, integer>
-LambdaCall = Expr:new({ astType = AST_TYPE.LAMBDA_CALL, params = {} })
+---@field primitive boolean
+LambdaCall = Expr:new({ astType = AST_TYPE.LAMBDA_CALL, params = {}, primitive = true })
 
 ---@param obj1 LambdaCall
 ---@param obj2 LambdaCall
@@ -725,6 +726,9 @@ function LambdaCall.__eq(obj1, obj2)
         return true
     end
     if obj1.astType ~= obj2.astType then
+        return false
+    end
+    if obj1.primitive ~= obj2.primitive then
         return false
     end
     if obj1.value ~= obj2.value then
@@ -844,6 +848,9 @@ function LoopCall.__eq(obj1, obj2)
         return false
     end
     if obj1.body ~= obj2.body then
+        return false
+    end
+    if obj1.returnNil ~= obj2.returnNil then
         return false
     end
     return true

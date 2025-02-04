@@ -8,3 +8,9 @@
     ()
     (print i)
   )
+
+(setf sum 0)  (dotimes (i 5)
+    ()
+    (setf sum (+ sum i))
+  )
+  (print sum)

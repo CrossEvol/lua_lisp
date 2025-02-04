@@ -22,3 +22,9 @@ do not care about reduction
 0-31 && 127, lookup table
 32-126 , convert to #\a
 gt 128 , toUnicodePoint
+
+## single quote and sharp 
+here consider the '(...) as the syntax sugar for (list ...), consider #(...) as the syntax sugar for (vector ...)
+indeed in common lisp, '(...) denote the MACRO . 
+in common lisp , '(a b c d e) will be evaluated into (A B C D E)
+but in here, it will be evaluated into (list a b c d e), which means a / b / c / d / e must be declared before

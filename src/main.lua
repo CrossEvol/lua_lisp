@@ -147,7 +147,7 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-(if T 1 2)
+(map 'string (lambda (it) (code-char it)) #(97 98 99))
 ]]
 
 
@@ -158,7 +158,9 @@ local ast = parser:parse()
 local results = interpreter:interpret(ast)
 print(results)
 local expects = {
-    VALUE.Symbol:new({ name = "l1" }),
+    VALUE.SimpleBaseString:new({
+        stringValue = "abc"
+    })
 }
 local flag    = true
 for i = 1, #results do

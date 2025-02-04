@@ -671,11 +671,11 @@ describe("Parser tests", function()
             TEST_INTERPRETER_ERROR([[(code-char "")]])
             TEST_INTERPRETER_ERROR([[(code-char 1 1)]])
             TEST_INTERPRETER([[(code-char -1)]], VALUE.Null:new({}))
-            TEST_INTERPRETER([[(code-char 0)]], VALUE.SimpleBaseString:new({ stringValue = [[#\Null]] }))
-            TEST_INTERPRETER([[(code-char 32)]], VALUE.SimpleBaseString:new({ stringValue = [[#\ ]] }))
-            TEST_INTERPRETER([[(code-char 126)]], VALUE.SimpleBaseString:new({ stringValue = [[#\~]] }))
-            TEST_INTERPRETER([[(code-char 127)]], VALUE.SimpleBaseString:new({ stringValue = [[#\Del]] }))
-            TEST_INTERPRETER([[(code-char 128)]], VALUE.SimpleBaseString:new({ stringValue = [[#\\U0080]] }))
+            TEST_INTERPRETER([[(code-char 0)]], VALUE.Character:new({ chars = [[#\Null]] }))
+            TEST_INTERPRETER([[(code-char 32)]], VALUE.Character:new({ chars = [[#\ ]] }))
+            TEST_INTERPRETER([[(code-char 126)]], VALUE.Character:new({ chars = [[#\~]] }))
+            TEST_INTERPRETER([[(code-char 127)]], VALUE.Character:new({ chars = [[#\Del]] }))
+            TEST_INTERPRETER([[(code-char 128)]], VALUE.Character:new({ chars = [[#\\U0080]] }))
         end)
         it("concatenate", function()
             TEST_INTERPRETER_ERROR([[(concatenate)]])
@@ -1236,6 +1236,198 @@ describe("Parser tests", function()
                 VALUE.True:new({}),
                 VALUE.Null:new({})
             )
+        end)
+    end)
+    context("FlowControl", function()
+        it("IfCall", function()
+            TEST_INTERPRETER([[(if T 1)]], VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[(if Nil 1)]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[(if T 1 2)]], VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[(if NIL 1 2)]], VALUE.FixNum:new({ intValue = 2 }))
+            TEST_INTERPRETER([[(if (> 1 0) (print 1)(print 2))]], VALUE.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[(if (< 1 0) (print 1)(print 2))]], VALUE.FixNum:new({ intValue = 2 }))
+        end)
+        it("DoTimesCall", function()
+            TEST_INTERPRETER([[(dotimes (i 5)())]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[(dotimes (i 5)()(print i))]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+                (setf sum 0)
+                (dotimes (i 5)
+                    ()
+                    (setf sum (+ sum i))
+                )
+                (print sum)
+            ]],
+                VALUE.FixNum:new({ intValue = 0 }),
+                VALUE.Null:new({}),
+                VALUE.FixNum:new({ intValue = 10 }))
+        end)
+        it("DoListCall", function()
+            TEST_INTERPRETER([[(dolist (item #()))]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[(dolist (item '()))]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+                (setq sum 0)
+                (dolist (item '(1 2 3 4 5))(setf sum (+ sum item)))
+                (print sum)
+            ]],
+                VALUE.FixNum:new({ intValue = 0 }),
+                VALUE.Null:new({}),
+                VALUE.FixNum:new({ intValue = 15 }))
+            TEST_INTERPRETER([[
+                (defvar a 1)
+                (defvar b 2)
+                (defvar c 3)
+                (defvar d 4)
+                (defvar e 5)
+                (setq sum 0)
+                (dolist (item (list a b c d e))
+                (setf sum (+ sum item)))
+                (print sum)
+            ]],
+                VALUE.Symbol:new({ name = "a" }),
+                VALUE.Symbol:new({ name = "b" }),
+                VALUE.Symbol:new({ name = "c" }),
+                VALUE.Symbol:new({ name = "d" }),
+                VALUE.Symbol:new({ name = "e" }),
+                VALUE.FixNum:new({ intValue = 0 }),
+                VALUE.Null:new({}),
+                VALUE.FixNum:new({ intValue = 15 }))
+            TEST_INTERPRETER([[
+                (defvar l '(1 2 3 4 5))
+                (setq sum 0)
+                (dolist (item l)
+                (setf sum (+ sum item)))
+                (print sum)
+            ]],
+                VALUE.Symbol:new({ name = "l" }),
+                VALUE.FixNum:new({ intValue = 0 }),
+                VALUE.Null:new({}),
+                VALUE.FixNum:new({ intValue = 15 }))
+        end)
+        it("LoopCall", function()
+            TEST_INTERPRETER([[
+                    (loop for x in '()
+                        do ())
+            ]],
+                VALUE.Null:new({})
+            )
+            TEST_INTERPRETER([[
+                    (loop for x in '(1 2 3)
+                        do (print x))
+            ]],
+                VALUE.Null:new({})
+            )
+            TEST_INTERPRETER([[
+                    (defvar a 1)
+                    (loop for x in '(1 2 3)
+                        do (setf a x))
+                    a
+            ]],
+                VALUE.Symbol:new({ name = "a" }),
+                VALUE.Null:new({}),
+                VALUE.FixNum:new({ intValue = 3 })
+            )
+            TEST_INTERPRETER([[
+                    (loop for x in '()
+                        collect ())
+            ]],
+                VALUE.Null:new({})
+            )
+            TEST_INTERPRETER([[
+                    (loop for x in '( 1 2 3 )
+                        collect (* x 10))
+            ]],
+                VALUE.Cons:new({
+                    elements = {
+                        VALUE.FixNum:new({ intValue = 10 }),
+                        VALUE.FixNum:new({ intValue = 20 }),
+                        VALUE.FixNum:new({ intValue = 30 }),
+                    }
+                })
+            )
+            TEST_INTERPRETER([[
+                    (loop for x in #( 1 2 3 )
+                        collect (* x 10))
+            ]],
+                VALUE.Cons:new({
+                    elements = {
+                        VALUE.FixNum:new({ intValue = 10 }),
+                        VALUE.FixNum:new({ intValue = 20 }),
+                        VALUE.FixNum:new({ intValue = 30 }),
+                    }
+                })
+            )
+        end)
+        it("MapCall", function()
+            TEST_INTERPRETER([[
+                 (map 'list (lambda (it) (+ it 10)) '())
+            ]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+                 (map 'vector (lambda (it) (+ it 10)) #(1 2 3))
+            ]], VALUE.SimpleVector:new({
+                elements = {
+                    VALUE.FixNum:new({ intValue = 11 }),
+                    VALUE.FixNum:new({ intValue = 12 }),
+                    VALUE.FixNum:new({ intValue = 13 }),
+                }
+            }))
+            TEST_INTERPRETER([[
+                  (map 'list (lambda (it) it) '(1 2 3))
+            ]], VALUE.Cons:new({
+                elements = {
+                    VALUE.FixNum:new({ intValue = 1 }),
+                    VALUE.FixNum:new({ intValue = 2 }),
+                    VALUE.FixNum:new({ intValue = 3 }),
+                }
+            }))
+            TEST_INTERPRETER([[
+                  (map 'list (lambda (it) (+ it 10)) '(1 2 3))
+            ]], VALUE.Cons:new({
+                elements = {
+                    VALUE.FixNum:new({ intValue = 11 }),
+                    VALUE.FixNum:new({ intValue = 12 }),
+                    VALUE.FixNum:new({ intValue = 13 }),
+                }
+            }))
+            TEST_INTERPRETER([[
+                  (map 'string (lambda (it) (code-char it)) #(97 98 99))
+            ]],
+                VALUE.SimpleBaseString:new({ stringValue = "abc" }))
+            TEST_INTERPRETER_ERROR([[
+                  (map 'string (lambda (it) it) #(97 98 99))
+            ]])
+        end)
+        it("MapcarCall", function()
+            TEST_INTERPRETER([[
+                 (mapcar (lambda (it) (+ it 10)) '())
+            ]], VALUE.Null:new({}))
+            TEST_INTERPRETER([[
+                 (mapcar (lambda (it) (+ it 10)) '(1 2 3))
+            ]], VALUE.Cons:new({
+                elements = {
+                    VALUE.FixNum:new({ intValue = 11 }),
+                    VALUE.FixNum:new({ intValue = 12 }),
+                    VALUE.FixNum:new({ intValue = 13 }),
+                }
+            }))
+            TEST_INTERPRETER([[
+                 (mapcar (lambda (it) (+ it 10)) #(1 2 3))
+            ]], VALUE.Cons:new({
+                elements = {
+                    VALUE.FixNum:new({ intValue = 11 }),
+                    VALUE.FixNum:new({ intValue = 12 }),
+                    VALUE.FixNum:new({ intValue = 13 }),
+                }
+            }))
+            TEST_INTERPRETER([[
+                  (mapcar (lambda (it) it) '(1 2 3))
+            ]], VALUE.Cons:new({
+                elements = {
+                    VALUE.FixNum:new({ intValue = 1 }),
+                    VALUE.FixNum:new({ intValue = 2 }),
+                    VALUE.FixNum:new({ intValue = 3 }),
+                }
+            }))
         end)
     end)
 end)
