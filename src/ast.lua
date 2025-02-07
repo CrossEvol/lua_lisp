@@ -79,7 +79,7 @@ local AST_TYPE = {
 ---@field value T
 AST = {
     astType = AST_TYPE.AST,
-    value = VALUE.Value:new({})
+    value = VALUE.Null:new({})
 }
 
 ---@param o table

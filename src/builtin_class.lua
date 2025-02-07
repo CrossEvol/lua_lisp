@@ -5,7 +5,6 @@ local Util = require("src.util")
 local BUILT_IN_CLASS = {
     T                     = 'T',
     VALUE_TYPE            = 'ValueType',
-    STANDARD_OBJECT       = 'StandardObject',
     STRUCTURE_OBJECT      = 'StructureObject',
     STANDARD_CLASS        = 'StandardClass',
     SLOT_VALUE            = 'SlotValue',
@@ -13,8 +12,8 @@ local BUILT_IN_CLASS = {
     GENERIC_FUNCTION      = 'GenericFunction',
     METHOD                = 'Method',
     TRUE                  = 'True',
-    NULL                  = 'Null',
-    FUNCTION              = 'Function',
+    NULL                  = 'NULL',
+    FUNCTION              = 'FUNCTION',
     USER_DEFINED_FUNCTION = 'UserDefinedFunction',
     BUILT_IN_FUNCTION     = 'BuiltinFunction',
     LAMBDA_FUNCTION       = 'LambdaFunction',
@@ -23,24 +22,21 @@ local BUILT_IN_CLASS = {
     FIX_NUM               = 'FixNum',
     INTEGER               = 'Integer',
     FLOAT                 = 'Float',
-    SINGLE_FLOAT          = 'SingleFloat',
-    RATIONAL              = 'Rational',
-    CHARACTER             = 'Character',
+    SINGLE_FLOAT          = 'SINGLE-FLOAT',
+    RATIONAL              = 'RATIONAL',
+    CHARACTER             = 'CHARACTER',
     STRING                = 'String',
     SIMPLE_BASE_STRING    = 'SIMPLE-BASE-STRING',
     LIST                  = 'List',
-    CONS                  = 'Cons',
-    SIMPLE_VECTOR         = 'SimpleVector',
-    HASH_TABLE            = 'HashTable',
-    AUXILIARY             = 'Auxiliary',
-    VALUE                 = 'Value',
+    CONS                  = 'CONS',
+    SIMPLE_VECTOR         = 'SIMPLE-VECTOR',
+    HASH_TABLE            = 'HASH-TABLE',
 }
 
 ---@alias BUILT_IN_CLASS.Type
 ---| '"T"'
 ---| '"ValueType"'
----| '"Cons"'
----| '"StandardObject"'
+---| '"CONS"'
 ---| '"StructureObject"'
 ---| '"StandardClass"'
 ---| '"SlotValue"'
@@ -48,27 +44,25 @@ local BUILT_IN_CLASS = {
 ---| '"GenericFunction"'
 ---| '"Method"'
 ---| '"True"'
----| '"Null"'
----| '"Function"'
+---| '"NULL"'
+---| '"FUNCTION"'
 ---| '"UserDefinedFunction"'
 ---| '"BuiltinFunction"'
 ---| '"LambdaFunction"'
----| '"Symbol"'
+---| '"SYMBOL"'
 ---| '"Number"'
----| '"FixNum"'
+---| '"FIXNUM"'
 ---| '"Integer"'
 ---| '"Float"'
----| '"SingleFloat"'
----| '"Rational"'
----| '"Character"'
+---| '"SINGLE-FLOAT"'
+---| '"RATIONAL"'
+---| '"CHARACTER"'
 ---| '"String"'
 ---| '"SIMPLE-BASE-STRING"'
----| '"List"'
----| '"Cons"'
----| '"SimpleVector"'
----| '"HashTable"'
----| '"Auxiliary"'
----| '"Value"'
+---| '"LIST"'
+---| '"CONS"'
+---| '"SIMPLE-VECTOR"'
+---| '"HASH-TABLE"'
 
 ---baseHashTable means table allocated in the globals, each value inside HashTable.entries should have a reference to baseHashTable
 ---@class T
@@ -92,22 +86,44 @@ function T:new(o)
     return o
 end
 
----@return string
+local TAB = "\t"
+local ENDL = "\n"
+local SPACES = "    "
+
+---for class-of
+---@return SimpleBaseString
 function T:asClass()
-    local s = tostring(self)
-    local address = string.gsub(s, 'table: ', '')
-    address = string.sub(address, 6, 15)
-    return string.format("#<BUILT_IN_CLASS> %s {%s}", self.classType, address)
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
 end
 
+---for type-of
 ---@return ValueType
 function T:asType()
     return ValueType:new({})
 end
 
+---for print
 ---@return string
 function T:asString()
     return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function T:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@return string
@@ -171,9 +187,33 @@ function Symbol:new(o)
     return o
 end
 
+---@return SimpleBaseString
+function Symbol:asClass()
+    return T.asClass(self)
+end
+
+---@return string
+function Symbol:asString()
+    return self.name:upper()
+end
+
 ---@return ValueType
 function Symbol:asType()
     return ValueType:new({ typeName = "SYMBOL" })
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function Symbol:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@return string
@@ -205,9 +245,9 @@ function Null.__eq(obj1, obj2)
     return obj1.classType == obj2.classType
 end
 
----@return string
-function Null:asString()
-    return "NIL"
+---@return SimpleBaseString
+function Null:asClass()
+    return T.asClass(self)
 end
 
 ---@return ValueType
@@ -215,8 +255,16 @@ function Null:asType()
     return ValueType:new({ typeName = "NULL" })
 end
 
----@class StandardObject : T
-StandardObject  = T:new({ classType = BUILT_IN_CLASS.STANDARD_OBJECT, })
+---@return string
+function Null:asString()
+    return "NIL"
+end
+
+---for inspect
+---@return SimpleBaseString
+function Null:asLayout()
+    return SimpleBaseString:new({ stringValue = "{}" })
+end
 
 ---@class StructureObject : T
 StructureObject = T:new({ classType = BUILT_IN_CLASS.STRUCTURE_OBJECT, isStructureObject = true })
@@ -311,6 +359,20 @@ end
 ---@return ValueType
 function StandardClass:asType()
     error({})
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function StandardClass:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@param obj1 StandardClass
@@ -436,6 +498,15 @@ function StandardInstance:get(key)
 end
 
 ---@return string
+function StandardInstance:asString()
+    local s = tostring(self)
+    local address = string.gsub(s, 'table: ', '')
+    address = string.sub(address, 6, 15)
+    ---@diagnostic disable-next-line: undefined-field
+    return string.format("#<%s> {%s}", string.upper(self.classRef.name.name), address)
+end
+
+---@return string
 function StandardInstance:asClass()
     return self.classRef:asClass()
 end
@@ -444,6 +515,20 @@ end
 function StandardInstance:asType()
     ---@diagnostic disable-next-line: undefined-field
     return ValueType:new({ stringValue = string.upper(self.classRef.name.name) })
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function StandardInstance:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@param obj1 StandardInstance
@@ -469,15 +554,6 @@ function StandardInstance.__eq(obj1, obj2)
     return true
 end
 
----@return string
-function StandardInstance:asString()
-    local s = tostring(self)
-    local address = string.gsub(s, 'table: ', '')
-    address = string.sub(address, 6, 15)
-    ---@diagnostic disable-next-line: undefined-field
-    return string.format("#<%s> {%s}", string.upper(self.classRef.name.name), address)
-end
-
 ---@class True : T
 True = T:new({ classType = BUILT_IN_CLASS.TRUE, })
 
@@ -495,10 +571,44 @@ function True:asType()
     return ValueType:new({ typeName = "BOOLEAN" })
 end
 
+---for class-of
+---@return SimpleBaseString
+function True:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function True:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function True:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---include user-defined function and builtin function
 ---@class Function : T
 ---@field func function
-Function = T:new({ classType = BUILT_IN_CLASS.FUNCTION, func = function() end })
+Function = T:new({
+    classType = BUILT_IN_CLASS.FUNCTION,
+    superClassType = BUILT_IN_CLASS.FUNCTION,
+    func = function() end
+})
 
 ---@param o any
 ---@return Function
@@ -521,12 +631,49 @@ function Function.__eq(obj1, obj2)
     return obj1.func == obj2.func
 end
 
+---for class-of
+---@return SimpleBaseString
+function Function:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for type-of
+---@return ValueType
+function Function:asType()
+    return ValueType:new({})
+end
+
+---for print
+---@return string
+function Function:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function Function:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class UserDefinedFunction : Function
 ---@field func nil
 ---@field params table<VariableDeclaration, integer>
 ---@field expressions table<Expr, integer>
 UserDefinedFunction = T:new({
     classType = BUILT_IN_CLASS.USER_DEFINED_FUNCTION,
+    superClassType = BUILT_IN_CLASS.FUNCTION,
     func = nil,
     params = {},
     expressions = {},
@@ -560,10 +707,47 @@ function UserDefinedFunction.__eq(obj1, obj2)
     return true
 end
 
+---for class-of
+---@return SimpleBaseString
+function UserDefinedFunction:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for type-of
+---@return ValueType
+function UserDefinedFunction:asType()
+    return ValueType:new({})
+end
+
+---for print
+---@return string
+function UserDefinedFunction:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function UserDefinedFunction:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class BuiltinFunction : Function
 ---@field name string
 BuiltinFunction = Function:new({
     classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION,
+    superClassType = BUILT_IN_CLASS.FUNCTION,
     name = "",
 })
 
@@ -573,12 +757,49 @@ function BuiltinFunction.__eq(obj1, obj2)
     return Function.__eq(obj1, obj2)
 end
 
+---for class-of
+---@return SimpleBaseString
+function BuiltinFunction:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for type-of
+---@return ValueType
+function BuiltinFunction:asType()
+    return ValueType:new({})
+end
+
+---for print
+---@return string
+function BuiltinFunction:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function BuiltinFunction:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class LambdaFunction : Function
 ---@field func nil
 ---@field params table<VariableDeclaration, integer>
 ---@field expressions table<Expr, integer>
 LambdaFunction = T:new({
     classType = BUILT_IN_CLASS.LAMBDA_FUNCTION,
+    superClassType = BUILT_IN_CLASS.FUNCTION,
     func = nil,
     params = {},
     expressions = {},
@@ -612,8 +833,46 @@ function LambdaFunction.__eq(obj1, obj2)
     return true
 end
 
+---@return ValueType
+function LambdaFunction:asType()
+    return ValueType:new({ typeName = "FUNCTION" })
+end
+
+---for class-of
+---@return SimpleBaseString
+function LambdaFunction:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function LambdaFunction:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function LambdaFunction:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class GenericFunction : T
-GenericFunction = T:new({ classType = BUILT_IN_CLASS.GENERIC_FUNCTION, })
+GenericFunction = T:new({
+    classType = BUILT_IN_CLASS.GENERIC_FUNCTION,
+    superClassType = BUILT_IN_CLASS.FUNCTION,
+})
 
 ---@class Method : UserDefinedFunction
 ---@field name Symbol
@@ -622,6 +881,7 @@ GenericFunction = T:new({ classType = BUILT_IN_CLASS.GENERIC_FUNCTION, })
 ---@field target Symbol
 Method          = UserDefinedFunction:new({
     classType        = BUILT_IN_CLASS.METHOD,
+    superClassType   = BUILT_IN_CLASS.FUNCTION,
     name             = Symbol:new({}),
     isAccessorMethod = false,
     target           = Null:new({}),
@@ -640,6 +900,42 @@ end
 ---@param obj2 Method
 function Method.__eq(obj1, obj2)
     return UserDefinedFunction.__eq(obj1, obj2)
+end
+
+---for class-of
+---@return SimpleBaseString
+function Method:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for type-of
+---@return ValueType
+function Method:asType()
+    return ValueType:new({})
+end
+
+---for print
+---@return string
+function Method:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function Method:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@class Number : T
@@ -827,6 +1123,30 @@ function FixNum:asType()
     return ValueType:new({ typeName = "(INTEGER 0 2147483647)" })
 end
 
+---for class-of
+---@return SimpleBaseString
+function FixNum:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function FixNum:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class SingleFloat : T
 ---@field floatValue number
 SingleFloat = Number:new({ classType = BUILT_IN_CLASS.SINGLE_FLOAT, floatValue = 0.0 })
@@ -962,6 +1282,36 @@ end
 ---@return ValueType
 function SingleFloat:asType()
     return ValueType:new({ typeName = "SINGLE-FLOAT" })
+end
+
+---for class-of
+---@return SimpleBaseString
+function SingleFloat:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function SingleFloat:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function SingleFloat:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@class Rational : T
@@ -1129,6 +1479,36 @@ function Rational:asType()
     return ValueType:new({ typeName = "RATIO" })
 end
 
+---for class-of
+---@return SimpleBaseString
+function Rational:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function Rational:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function Rational:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class Character : T
 ---@field chars string
 Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, chars = "" })
@@ -1150,9 +1530,48 @@ function Character:asType()
     return ValueType:new({ typeName = "STANDARD-CHAR" })
 end
 
+---for class-of
+---@return SimpleBaseString
+function Character:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function Character:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function Character:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class SimpleBaseString : T
 ---@field stringValue string
 SimpleBaseString = StructureObject:new({ classType = BUILT_IN_CLASS.SIMPLE_BASE_STRING, stringValue = '' })
+
+---@param o any
+---@return SimpleBaseString
+function SimpleBaseString:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
 
 ---@param obj1 SimpleBaseString
 ---@param obj2 SimpleBaseString
@@ -1171,8 +1590,38 @@ function SimpleBaseString:asType()
     return ValueType:new({ typeName = string.format("(SIMPLE-BASE-STRING %d)", self.stringValue:len()) })
 end
 
+---for class-of
+---@return SimpleBaseString
+function SimpleBaseString:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function SimpleBaseString:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function SimpleBaseString:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class List : T
----@field elements table<T , integer>
+---@field elements table<integer ,T>
 List = StructureObject:new({ classType = BUILT_IN_CLASS.LIST, superClassType = BUILT_IN_CLASS.LIST, elements = {} })
 
 ---@param obj1 List
@@ -1195,6 +1644,54 @@ function List.__eq(obj1, obj2)
     return true
 end
 
+---for class-of
+---@return SimpleBaseString
+function List:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for type-of
+---@return ValueType
+function List:asType()
+    return ValueType:new({})
+end
+
+---for print
+---@return string
+function List:asString()
+    local str = ""
+    str = str .. "\"("
+    for _, value in pairs(self.elements) do
+        str = str .. value:asString() .. " "
+    end
+    if #self.elements ~= 0 then
+        str = string.sub(str, 1, string.len(str) - 1)
+    end
+    str = str .. ")\""
+    return str
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function List:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    for index, value in ipairs(self.elements) do
+        str = str .. tabs .. SPACES .. "#" .. index .. " = " .. self.classType .. "," .. ENDL
+    end
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class Cons : List
 Cons = List:new({ classType = BUILT_IN_CLASS.CONS })
 
@@ -1209,6 +1706,36 @@ function Cons:asType()
     return ValueType:new({ typeName = "CONS" })
 end
 
+---for class-of
+---@return SimpleBaseString
+function Cons:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function Cons:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function Cons:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
+
 ---@class SimpleVector : List
 SimpleVector = List:new({ classType = BUILT_IN_CLASS.SIMPLE_VECTOR })
 
@@ -1221,6 +1748,36 @@ end
 ---@return ValueType
 function SimpleVector:asType()
     return ValueType:new({ typeName = string.format("(SIMPLE-VECTOR %d)", #self.elements) })
+end
+
+---for class-of
+---@return SimpleBaseString
+function SimpleVector:asClass()
+    local address = Util.ToAddress(self)
+    local result = SimpleBaseString:new({
+        stringValue = string.format("#<BUILT-IN-CLASS> %s {%s}", self:asType():asString(), address)
+    })
+    return result
+end
+
+---for print
+---@return string
+function SimpleVector:asString()
+    return ""
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function SimpleVector:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. "," .. ENDL
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
 end
 
 ---@class HashTable : StructureObject
@@ -1247,11 +1804,6 @@ function HashTable.__eq(obj1, obj2)
     return true
 end
 
----@return ValueType
-function HashTable:asType()
-    return ValueType:new({ typeName = "HASH-TABLE" })
-end
-
 ---@param key T
 ---@param value T
 ---@return nil
@@ -1265,18 +1817,47 @@ function HashTable:get(key)
     return self.entries[key:asKey()]
 end
 
----@class Auxiliary : T
-Auxiliary = T:new({ classType = BUILT_IN_CLASS.AUXILIARY, })
+---for class-of
+---@return SimpleBaseString
+function HashTable:asClass()
+    return T.asClass(self)
+end
 
----@class Value : T
----@field value any
----should be used as the default value
-Value = T:new({ classType = BUILT_IN_CLASS.VALUE, value = nil })
+---@return ValueType
+function HashTable:asType()
+    return ValueType:new({ typeName = "HASH-TABLE" })
+end
+
+---for print
+---@return string
+function HashTable:asString()
+    return string.format(
+        "#<EQL HASH-TABLE %d entry, %d buckets {%s}>",
+        #self.entries,
+        #self.entries * 2,
+        Util.ToAddress(self))
+end
+
+---for inspect
+---@return SimpleBaseString
+---@param interpreter Interpreter
+---@param level integer
+function HashTable:asLayout(interpreter, level)
+    level = level or 0
+    local tabs = string.rep(TAB, level)
+    local str = ""
+    str = str .. tabs .. "{" .. ENDL
+    str = str .. tabs .. SPACES .. "type = " .. self.classType .. ENDL
+    for key, value in pairs(self.entries) do
+        str = str .. tabs .. SPACES .. key .. " = " .. value:asLayout(interpreter, level) .. ENDL
+    end
+    str = str .. tabs .. "}"
+    return SimpleBaseString:new({ stringValue = str })
+end
 
 return {
     T = T,
     ValueType = ValueType,
-    Value = Value,
     Number = Number,
     FixNum = FixNum,
     SingleFloat = SingleFloat,
@@ -1287,7 +1868,6 @@ return {
     Cons = Cons,
     SimpleVector = SimpleVector,
     HashTable = HashTable,
-    Auxiliary = Auxiliary,
     GenericFunction = GenericFunction,
     Method = Method,
     Function = Function,
@@ -1299,7 +1879,6 @@ return {
     StandardClass = StandardClass,
     SlotValue = SlotValue,
     StandardInstance = StandardInstance,
-    StandardObject = StandardObject,
     StructureObject = StructureObject,
     SimpleBaseString = SimpleBaseString,
     BUILT_IN_CLASS = BUILT_IN_CLASS,

@@ -3,6 +3,7 @@ local ErrorType = {
     LexerError = "LexerError",
     ParserError = "ParserError",
     InterpreterError = "InterpreterError",
+    UtilError = "UtilError",
     UnknownError = "UnknownError",
 }
 
@@ -10,6 +11,7 @@ local ErrorType = {
 ---| '"LexerError"'
 ---| '"ParserError"'
 ---| '"InterpreterError"'
+---| '"UtilError"'
 ---| '"UnknownError"'
 
 ---@class Error
@@ -47,8 +49,12 @@ InterpreterError = Error:new({
     columnNo = nil,
 })
 
+---@class UtilError : Error
+UtilError = Error:new({ type = ErrorType.UtilError })
+
 return {
     LexerError       = LexerError,
     ParserError      = ParserError,
+    UtilError        = UtilError,
     InterpreterError = InterpreterError,
 }

@@ -314,7 +314,7 @@ function Lexer:identifier()
     if self.prevToken.type == TokenType.COLON and SlotKeywords[str:upper()] then
         return Token:new({
             type = TokenType[str:upper()],
-            value = Auxiliary:new({}),
+            value = BuiltinClassModule.Null:new({}),
             lineNo = self.lineNo,
             columnNo = self.columnNo,
         })
@@ -324,7 +324,7 @@ function Lexer:identifier()
         -- lisp can use keyword as varname, (defvar defvar 1) is valid, should change the type and use previous type as value later
         return Token:new({
             type = TokenType[str:upper()],
-            value = Auxiliary:new({}),
+            value = BuiltinClassModule.Null:new({}),
             lineNo = self.lineNo,
             columnNo = self.columnNo,
         })
@@ -360,7 +360,7 @@ function Lexer:nextToken()
         elseif self:currentChar() == TokenType.LPAREN then
             local token = Token:new({
                 type = TokenType.LPAREN,
-                value = Auxiliary:new({}),
+                value = BuiltinClassModule.Null:new({}),
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
@@ -369,7 +369,7 @@ function Lexer:nextToken()
         elseif self:currentChar() == TokenType.RPAREN then
             local token = Token:new({
                 type = TokenType.RPAREN,
-                value = Auxiliary:new({}),
+                value = BuiltinClassModule.Null:new({}),
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
@@ -378,7 +378,7 @@ function Lexer:nextToken()
         elseif self:currentChar() == TokenType.COLON then
             local token = Token:new({
                 type = TokenType.COLON,
-                value = Auxiliary:new({}),
+                value = BuiltinClassModule.Null:new({}),
                 lineNo = self.lineNo,
                 columnNo = self.columnNo,
             })
@@ -403,7 +403,7 @@ function Lexer:nextToken()
             end
             local token = Token:new({
                 type = TokenType.SHARP,
-                value = Auxiliary:new({}),
+                value = BuiltinClassModule.Null:new({}),
                 lineNo = self.lineNo,
                 columnNo =
                     self.columnNo
@@ -415,7 +415,7 @@ function Lexer:nextToken()
         elseif self:currentChar() == TokenType.SINGLE_QUOTE then
             local token = Token:new({
                 type = TokenType.SINGLE_QUOTE,
-                value = Auxiliary:new({}),
+                value = BuiltinClassModule.Null:new({}),
                 lineNo = self.lineNo,
                 columnNo =
                     self.columnNo
@@ -429,7 +429,7 @@ function Lexer:nextToken()
         else
             return Token:new({
                 type = TokenType.EOF,
-                value = Auxiliary:new({}),
+                value = BuiltinClassModule.Null:new({}),
                 lineNo = self.lineNo,
                 columnNo = self
                     .columnNo

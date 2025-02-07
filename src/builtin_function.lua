@@ -1,4 +1,4 @@
-local VALUE = require("src.builtin_class")
+local BuiltinClassModule = require("src.builtin_class")
 local AST = require("src.ast")
 local InterpreterError = require("src.exception").InterpreterError
 
@@ -97,7 +97,7 @@ local __setq__function = function(interpreter, params)
         local symbol = variable.value
 
         if #params == 1 then
-            local null = VALUE.Null:new({})
+            local null = BuiltinClassModule.Null:new({})
             interpreter:add(symbol, null)
             return null
         elseif #params == 2 then
@@ -143,24 +143,6 @@ end
 ---@param interpreter Interpreter
 ---@param params table<Expr, integer>
 ---@return T
-local __type_of__function = function(interpreter, params)
-    if #params ~= 1 then
-        error(InterpreterError:new({}))
-    end
-    local ast = params[1]
-    if ast.astType == AST.AST_TYPE.VARIABLE then
-        return VALUE.ValueType:new({ typeName = "BIT" })
-    end
-    if ast.astType == AST.AST_TYPE.LAMBDA_DECLARATION then
-        return VALUE.ValueType:new({ typeName = "FUNCTION" })
-    end
-    local result = interpreter:visit(ast)
-    return result:asType()
-end
-
----@param interpreter Interpreter
----@param params table<Expr, integer>
----@return T
 local __print__function = function(interpreter, params)
     if #params ~= 1 then
         error(InterpreterError:new({}))
@@ -173,7 +155,7 @@ end
 ---@param interpreter Interpreter
 ---@return T
 local __make_hash_table__function = function(interpreter)
-    local result = VALUE.HashTable:new({ entries = {} })
+    local result = BuiltinClassModule.HashTable:new({ entries = {} })
     return result
 end
 
@@ -182,7 +164,7 @@ end
 ---@return T
 local __list__function = function(interpreter, params)
     if #params == 0 then
-        return VALUE.Null:new({ superClassType = VALUE.BUILT_IN_CLASS.LIST })
+        return BuiltinClassModule.Null:new({ superClassType = BuiltinClassModule.BUILT_IN_CLASS.LIST })
     end
 
     local elements = {}
@@ -190,7 +172,7 @@ local __list__function = function(interpreter, params)
         local element = interpreter:visit(params[i])
         table.insert(elements, element)
     end
-    local result = VALUE.Cons:new({ elements = elements })
+    local result = BuiltinClassModule.Cons:new({ elements = elements })
     return result
 end
 
@@ -207,7 +189,7 @@ local __cons__function = function(interpreter, params)
         local element = interpreter:visit(params[i])
         table.insert(elements, element)
     end
-    local result = VALUE.Cons:new({ elements = elements })
+    local result = BuiltinClassModule.Cons:new({ elements = elements })
     return result
 end
 
@@ -220,7 +202,7 @@ local __vector__function = function(interpreter, params)
         local element = interpreter:visit(params[i])
         table.insert(elements, element)
     end
-    local result = VALUE.SimpleVector:new({ elements = elements })
+    local result = BuiltinClassModule.SimpleVector:new({ elements = elements })
     return result
 end
 
@@ -228,11 +210,11 @@ end
 ---@param  params table<Expr, integer>
 ---@return T
 local __add__function = function(interpreter, params)
-    local sum = VALUE.FixNum:new({ intValue = 0 })
+    local sum = BuiltinClassModule.FixNum:new({ intValue = 0 })
 
     for i = 1, #params, 1 do
         local element = interpreter:visit(params[i])
-        if element.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if element.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         sum = sum + element
@@ -250,11 +232,11 @@ local __minus__function = function(interpreter, params)
 
     local reduction = interpreter:visit(params[1])
     if #params == 1 then
-        return VALUE.FixNum:new({ intValue = 0 }) - reduction
+        return BuiltinClassModule.FixNum:new({ intValue = 0 }) - reduction
     end
     for i = 2, #params, 1 do
         local element = interpreter:visit(params[i])
-        if element.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if element.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         reduction = reduction - element
@@ -266,11 +248,11 @@ end
 ---@param  params table<Expr, integer>
 ---@return T
 local __multiply__function = function(interpreter, params)
-    local production = VALUE.FixNum:new({ intValue = 1 })
+    local production = BuiltinClassModule.FixNum:new({ intValue = 1 })
 
     for i = 1, #params, 1 do
         local element = interpreter:visit(params[i])
-        if element.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if element.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         production = production * element
@@ -288,11 +270,11 @@ local __divide__function = function(interpreter, params)
 
     local quotient = interpreter:visit(params[1])
     if #params == 1 then
-        return VALUE.FixNum:new({ intValue = 1 }) / quotient
+        return BuiltinClassModule.FixNum:new({ intValue = 1 }) / quotient
     end
     for i = 2, #params, 1 do
         local element = interpreter:visit(params[i])
-        if element.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if element.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         quotient = quotient / element
@@ -309,18 +291,18 @@ local __eq_operator__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     if #params == 1 then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     end
     for i = 1, #params, 1 do
         local prev = interpreter:visit(params[i])
-        if prev.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if prev.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         local next = i + 1 <= #params and interpreter:visit(params[i + 1]) or nil
         if next == nil then
             break
         end
-        if next.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if next.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         if prev ~= next then
@@ -329,9 +311,9 @@ local __eq_operator__function = function(interpreter, params)
         end
     end
     if flag == true then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -344,18 +326,18 @@ local __not_eq_operator__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     if #params == 1 then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     end
     for i = 1, #params, 2 do
         local prev = interpreter:visit(params[i])
-        if prev.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if prev.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         local next = interpreter:visit(params[i + 1])
         if next == nil then
             break
         end
-        if next.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if next.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         if prev == next then
@@ -364,9 +346,9 @@ local __not_eq_operator__function = function(interpreter, params)
         end
     end
     if flag == true then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -380,20 +362,20 @@ local __eq__function = function(interpreter, params)
     end
     local left = interpreter:visit(params[1])
     local right = interpreter:visit(params[2])
-    if left.classType == VALUE.BUILT_IN_CLASS.FIX_NUM and right.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if left.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM and right.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         flag = left == right
-    elseif left.classType == VALUE.BUILT_IN_CLASS.TRUE and right.classType == VALUE.BUILT_IN_CLASS.TRUE then
+    elseif left.classType == BuiltinClassModule.BUILT_IN_CLASS.TRUE and right.classType == BuiltinClassModule.BUILT_IN_CLASS.TRUE then
         flag = true
-    elseif left.classType == VALUE.BUILT_IN_CLASS.NULL and right.classType == VALUE.BUILT_IN_CLASS.NULL then
+    elseif left.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL and right.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
         flag = true
     else
         flag = tostring(left) == tostring(right)
     end
 
     if flag then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -407,12 +389,12 @@ local __eql__function = function(interpreter, params)
     local left = interpreter:visit(params[1])
     local right = interpreter:visit(params[2])
     if left.isStructureObject or right.isStructureObject then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
     if left == right then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -426,9 +408,9 @@ local __equal__function = function(interpreter, params)
     local left = interpreter:visit(params[1])
     local right = interpreter:visit(params[2])
     if left == right then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -441,18 +423,18 @@ local __less_than__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     if #params == 1 then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     end
     for i = 1, #params, 1 do
         local prev = interpreter:visit(params[i])
-        if prev.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if prev.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         local next = i + 1 <= #params and interpreter:visit(params[i + 1]) or nil
         if next == nil then
             break
         end
-        if next.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if next.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         if prev >= next then
@@ -461,9 +443,9 @@ local __less_than__function = function(interpreter, params)
         end
     end
     if flag == true then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -476,18 +458,18 @@ local __less_equal__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     if #params == 1 then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     end
     for i = 1, #params, 1 do
         local prev = interpreter:visit(params[i])
-        if prev.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if prev.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         local next = i + 1 <= #params and interpreter:visit(params[i + 1]) or nil
         if next == nil then
             break
         end
-        if next.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if next.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         if prev > next then
@@ -496,9 +478,9 @@ local __less_equal__function = function(interpreter, params)
         end
     end
     if flag == true then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -511,18 +493,18 @@ local __greater_than__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     if #params == 1 then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     end
     for i = 1, #params, 1 do
         local prev = interpreter:visit(params[i])
-        if prev.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if prev.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         local next = i + 1 <= #params and interpreter:visit(params[i + 1]) or nil
         if next == nil then
             break
         end
-        if next.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if next.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         if prev <= next then
@@ -531,9 +513,9 @@ local __greater_than__function = function(interpreter, params)
         end
     end
     if flag == true then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -546,18 +528,18 @@ local __greater_equal__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     if #params == 1 then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     end
     for i = 1, #params, 1 do
         local prev = interpreter:visit(params[i])
-        if prev.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if prev.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         local next = i + 1 <= #params and interpreter:visit(params[i + 1]) or nil
         if next == nil then
             break
         end
-        if next.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+        if next.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
             error(InterpreterError:new({}))
         end
         if prev < next then
@@ -566,9 +548,9 @@ local __greater_equal__function = function(interpreter, params)
         end
     end
     if flag == true then
-        return VALUE.True:new({})
+        return BuiltinClassModule.True:new({})
     else
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 end
 
@@ -581,16 +563,16 @@ local __issqrt__function = function(interpreter, params)
     end
 
     local number = interpreter:visit(params[1])
-    if number.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+    if number.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
         error(InterpreterError:new({}))
     end
 
-    if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if number.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         ---@cast number FixNum
-        return VALUE.SingleFloat:new({ floatValue = math.sqrt(number.intValue) })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
+        return BuiltinClassModule.SingleFloat:new({ floatValue = math.sqrt(number.intValue) })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.SINGLE_FLOAT then
         ---@cast number SingleFloat
-        return VALUE.SingleFloat:new({ floatValue = math.sqrt(number.floatValue) })
+        return BuiltinClassModule.SingleFloat:new({ floatValue = math.sqrt(number.floatValue) })
     else
         error(InterpreterError:new({}))
     end
@@ -605,20 +587,20 @@ local __random__function = function(interpreter, params)
     end
 
     local bound = interpreter:visit(params[1])
-    if bound.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+    if bound.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
         error(InterpreterError:new({}))
     end
 
-    if bound.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if bound.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         -- Return a random integer between 0 and bound - 1
         ---@cast bound FixNum
         local randomInt = math.random(0, bound.intValue - 1)
-        return VALUE.FixNum:new({ intValue = randomInt })
-    elseif bound.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
+        return BuiltinClassModule.FixNum:new({ intValue = randomInt })
+    elseif bound.classType == BuiltinClassModule.BUILT_IN_CLASS.SINGLE_FLOAT then
         -- Return a random float between 0 and bound
         ---@cast bound SingleFloat
         local randomFloat = math.random() * bound.floatValue
-        return VALUE.SingleFloat:new({ floatValue = randomFloat })
+        return BuiltinClassModule.SingleFloat:new({ floatValue = randomFloat })
     else
         error(InterpreterError:new({}))
     end
@@ -633,27 +615,27 @@ local __ceiling__function = function(interpreter, params)
     end
 
     local number = interpreter:visit(params[1])
-    if number.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+    if number.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
         error(InterpreterError:new({}))
     end
 
-    if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if number.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         ---@cast number FixNum
         local intValue = number.intValue
-        return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.FixNum:new({ intValue = 0 }) } })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { BuiltinClassModule.FixNum:new({ intValue = 0 }) } })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.SINGLE_FLOAT then
         ---@cast number SingleFloat
         local floatValue = number.floatValue
         local intValue = math.ceil(floatValue)
         local gap = floatValue - intValue
-        return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.SingleFloat:new({ floatValue = gap }) } })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.RATIONAL then
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { BuiltinClassModule.SingleFloat:new({ floatValue = gap }) } })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.RATIONAL then
         ---@cast number Rational
         local floatValue = number.numerator / number.denominator
         local intValue = math.ceil(floatValue)
-        local fixNum = VALUE.FixNum:new({ intValue = intValue })
+        local fixNum = BuiltinClassModule.FixNum:new({ intValue = intValue })
         local fraction = number - fixNum
-        return VALUE.FixNum:new({ intValue = intValue, extras = { fraction } })
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { fraction } })
     else
         error(InterpreterError:new({}))
     end
@@ -668,27 +650,27 @@ local __floor__function = function(interpreter, params)
     end
 
     local number = interpreter:visit(params[1])
-    if number.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+    if number.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
         error(InterpreterError:new({}))
     end
 
-    if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if number.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         ---@cast number FixNum
         local intValue = number.intValue
-        return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.FixNum:new({ intValue = 0 }) } })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { BuiltinClassModule.FixNum:new({ intValue = 0 }) } })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.SINGLE_FLOAT then
         ---@cast number SingleFloat
         local floatValue = number.floatValue
         local intValue = math.floor(floatValue)
         local gap = floatValue - intValue
-        return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.SingleFloat:new({ floatValue = gap }) } })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.RATIONAL then
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { BuiltinClassModule.SingleFloat:new({ floatValue = gap }) } })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.RATIONAL then
         ---@cast number Rational
         local floatValue = number.numerator / number.denominator
         local intValue = math.floor(floatValue)
-        local fixNum = VALUE.FixNum:new({ intValue = intValue })
+        local fixNum = BuiltinClassModule.FixNum:new({ intValue = intValue })
         local fraction = number - fixNum
-        return VALUE.FixNum:new({ intValue = intValue, extras = { fraction } })
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { fraction } })
     else
         error(InterpreterError:new({}))
     end
@@ -712,27 +694,27 @@ local __round__function = function(interpreter, params)
     end
 
     local number = interpreter:visit(params[1])
-    if number.superClassType ~= VALUE.BUILT_IN_CLASS.NUMBER then
+    if number.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.NUMBER then
         error(InterpreterError:new({}))
     end
 
-    if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if number.classType == BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         ---@cast number FixNum
         local intValue = number.intValue
-        return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.FixNum:new({ intValue = 0 }) } })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { BuiltinClassModule.FixNum:new({ intValue = 0 }) } })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.SINGLE_FLOAT then
         ---@cast number SingleFloat
         local floatValue = number.floatValue
         local intValue = Round(floatValue)
         local gap = floatValue - intValue
-        return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.SingleFloat:new({ floatValue = gap }) } })
-    elseif number.classType == VALUE.BUILT_IN_CLASS.RATIONAL then
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { BuiltinClassModule.SingleFloat:new({ floatValue = gap }) } })
+    elseif number.classType == BuiltinClassModule.BUILT_IN_CLASS.RATIONAL then
         ---@cast number Rational
         local floatValue = number.numerator / number.denominator
         local intValue = Round(floatValue)
-        local fixNum = VALUE.FixNum:new({ intValue = intValue })
+        local fixNum = BuiltinClassModule.FixNum:new({ intValue = intValue })
         local fraction = fixNum - number
-        return VALUE.FixNum:new({ intValue = intValue, extras = { fraction } })
+        return BuiltinClassModule.FixNum:new({ intValue = intValue, extras = { fraction } })
     else
         error(InterpreterError:new({}))
     end
@@ -755,30 +737,30 @@ local __make_string__function = function(interpreter, params)
 
     if #params == 1 then
         local number = interpreter:visit(params[1])
-        if number.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+        if number.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
         ---@cast number FixNum
-        return VALUE.SimpleBaseString:new({ stringValue = string.rep(" ", number.intValue) })
+        return BuiltinClassModule.SimpleBaseString:new({ stringValue = string.rep(" ", number.intValue) })
     end
 
     if #params == 3 then
         local number = interpreter:visit(params[1])
-        if number.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+        if number.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
         interpreter:toggleDeclaring()
         local initialElement = interpreter:visit(params[2])
         interpreter:toggleDeclaring()
-        if initialElement.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
+        if initialElement.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
             error(InterpreterError:new({}))
         end
         local char = interpreter:visit(params[3])
-        if char.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+        if char.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
             error(InterpreterError:new({}))
         end
         ---@cast number FixNum
-        return VALUE.SimpleBaseString:new({ stringValue = string.rep(char.chars:sub(3, 3), number.intValue) })
+        return BuiltinClassModule.SimpleBaseString:new({ stringValue = string.rep(char.chars:sub(3, 3), number.intValue) })
     end
 
     error(InterpreterError:new({}))
@@ -793,12 +775,12 @@ local __string_upcase__function = function(interpreter, params)
     end
 
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = string.upper(simpleBaseString.stringValue) })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.upper(simpleBaseString.stringValue) })
     return result
 end
 
@@ -811,12 +793,12 @@ local __string_downcase__function = function(interpreter, params)
     end
 
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = string.lower(simpleBaseString.stringValue) })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.lower(simpleBaseString.stringValue) })
     return result
 end
 
@@ -829,7 +811,7 @@ local __string_capitalize__function = function(interpreter, params)
     end
 
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
@@ -840,7 +822,7 @@ local __string_capitalize__function = function(interpreter, params)
         local capitalized = word:sub(1, 1):upper() .. word:sub(2):lower()
         table.insert(words, capitalized)
     end
-    local result = VALUE.SimpleBaseString:new({ stringValue = table.concat(words, " ") })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = table.concat(words, " ") })
     return result
 end
 
@@ -853,12 +835,12 @@ local __char__function = function(interpreter, params)
     end
 
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
 
     local fixNum = interpreter:visit(params[2])
-    if fixNum.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if fixNum.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
@@ -869,7 +851,8 @@ local __char__function = function(interpreter, params)
     if intValue >= #stringValue then
         error(InterpreterError:new({}))
     end
-    local result = VALUE.Character:new({ chars = [[#\]] .. string.sub(stringValue, intValue + 1, intValue + 1) })
+    local result = BuiltinClassModule.Character:new({ chars = [[#\]] ..
+    string.sub(stringValue, intValue + 1, intValue + 1) })
     return result
 end
 
@@ -953,7 +936,7 @@ local __code_char__function = function(interpreter, params)
     end
 
     local fixNum = interpreter:visit(params[1])
-    if fixNum.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if fixNum.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
     ---@cast fixNum FixNum
@@ -961,19 +944,19 @@ local __code_char__function = function(interpreter, params)
     local intValue = fixNum.intValue
 
     if intValue < 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     if ASCII_I2XXI[intValue] ~= nil then
-        local result = VALUE.Character:new({ chars = [[#\]] .. ASCII_I2XXI[intValue] })
+        local result = BuiltinClassModule.Character:new({ chars = [[#\]] .. ASCII_I2XXI[intValue] })
         return result
     end
     if 32 <= intValue and intValue <= 126 then
-        local result = VALUE.Character:new({ chars = [[#\]] .. string.char(intValue) })
+        local result = BuiltinClassModule.Character:new({ chars = [[#\]] .. string.char(intValue) })
         return result
     end
 
-    local result = VALUE.Character:new({ chars = [[#\]] .. toUnicodeCodepoint(intValue) })
+    local result = BuiltinClassModule.Character:new({ chars = [[#\]] .. toUnicodeCodepoint(intValue) })
     return result
 end
 
@@ -988,7 +971,7 @@ local __concatenate__function = function(interpreter, params)
     interpreter:toggleDeclaring()
     local symbol = interpreter:visit(params[1])
     interpreter:toggleDeclaring()
-    if symbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
+    if symbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
         error(InterpreterError:new({}))
     end
     ---@cast symbol Symbol
@@ -998,7 +981,7 @@ local __concatenate__function = function(interpreter, params)
     local stringValue = ""
     for i = 2, #params, 1 do
         local simpleBaseString = interpreter:visit(params[i])
-        if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+        if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
             error(InterpreterError:new({}))
         else
             ---@cast simpleBaseString SimpleBaseString
@@ -1007,7 +990,7 @@ local __concatenate__function = function(interpreter, params)
     end
 
     if symbolName == "string" then
-        local result = VALUE.SimpleBaseString:new({ stringValue = stringValue })
+        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = stringValue })
         return result
     end
     if symbolName == "list" then
@@ -1015,13 +998,13 @@ local __concatenate__function = function(interpreter, params)
         local stringValue = stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
-            local character = VALUE.Character:new({ chars = string.format([[#\%s]], ch) })
+            local character = BuiltinClassModule.Character:new({ chars = string.format([[#\%s]], ch) })
             table.insert(elements, character)
         end
         if #elements == 0 then
-            return VALUE.Null:new({})
+            return BuiltinClassModule.Null:new({})
         end
-        local result = VALUE.Cons:new({ elements = elements })
+        local result = BuiltinClassModule.Cons:new({ elements = elements })
         return result
     end
     if symbolName == "vector" then
@@ -1029,10 +1012,10 @@ local __concatenate__function = function(interpreter, params)
         local stringValue = stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
-            local character = VALUE.Character:new({ chars = string.format([[#\%s]], ch) })
+            local character = BuiltinClassModule.Character:new({ chars = string.format([[#\%s]], ch) })
             table.insert(elements, character)
         end
-        local result = VALUE.SimpleVector:new({ elements = elements })
+        local result = BuiltinClassModule.SimpleVector:new({ elements = elements })
         return result
     end
     error(InterpreterError:new({}))
@@ -1046,13 +1029,13 @@ local __reverse__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
 
     local stringValue = simpleBaseString.stringValue
-    local result = VALUE.SimpleBaseString:new({ stringValue = string.reverse(stringValue) })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.reverse(stringValue) })
     return result
 end
 
@@ -1064,13 +1047,13 @@ local __string__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
 
     local stringValue = simpleBaseString.stringValue
-    local result = VALUE.SimpleBaseString:new({ stringValue = stringValue })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = stringValue })
     return result
 end
 
@@ -1083,18 +1066,18 @@ local __string_trim__function = function(interpreter, params)
     end
     local first = interpreter:visit(params[1])
     local charSet = {}
-    if first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if first.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         ---@cast first SimpleBaseString
         local stringValue = first.stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
             charSet[ch] = true
         end
-    elseif first.classType == VALUE.BUILT_IN_CLASS.CONS or first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
+    elseif first.classType == BuiltinClassModule.BUILT_IN_CLASS.CONS or first.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_VECTOR then
         ---@cast first List
         local elements = first.elements
         for i = 1, #elements, 1 do
-            if elements[i].classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+            if elements[i].classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
                 error(InterpreterError:new({}))
             end
             local character = interpreter:visit(AST.CharacterConstant:new({ value = elements[i] }))
@@ -1107,7 +1090,7 @@ local __string_trim__function = function(interpreter, params)
     end
 
     local second = interpreter:visit(params[2])
-    if second.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if second.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast second SimpleBaseString
@@ -1133,7 +1116,7 @@ local __string_trim__function = function(interpreter, params)
         end
     end
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = stringValue })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = stringValue })
     return result
 end
 
@@ -1146,18 +1129,18 @@ local __string_left_trim__function = function(interpreter, params)
     end
     local first = interpreter:visit(params[1])
     local charSet = {}
-    if first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if first.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         ---@cast first SimpleBaseString
         local stringValue = first.stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
             charSet[ch] = true
         end
-    elseif first.classType == VALUE.BUILT_IN_CLASS.CONS or first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
+    elseif first.classType == BuiltinClassModule.BUILT_IN_CLASS.CONS or first.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_VECTOR then
         ---@cast first List
         local elements = first.elements
         for i = 1, #elements, 1 do
-            if elements[i].classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+            if elements[i].classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
                 error(InterpreterError:new({}))
             end
             local character = interpreter:visit(AST.CharacterConstant:new({ value = elements[i] }))
@@ -1170,7 +1153,7 @@ local __string_left_trim__function = function(interpreter, params)
     end
 
     local second = interpreter:visit(params[2])
-    if second.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if second.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast second SimpleBaseString
@@ -1186,7 +1169,7 @@ local __string_left_trim__function = function(interpreter, params)
         end
     end
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = stringValue })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = stringValue })
     return result
 end
 
@@ -1199,18 +1182,18 @@ local __string_right_trim__function = function(interpreter, params)
     end
     local first = interpreter:visit(params[1])
     local charSet = {}
-    if first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if first.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         ---@cast first SimpleBaseString
         local stringValue = first.stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
             charSet[ch] = true
         end
-    elseif first.classType == VALUE.BUILT_IN_CLASS.CONS or first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
+    elseif first.classType == BuiltinClassModule.BUILT_IN_CLASS.CONS or first.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_VECTOR then
         ---@cast first List
         local elements = first.elements
         for i = 1, #elements, 1 do
-            if elements[i].classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+            if elements[i].classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
                 error(InterpreterError:new({}))
             end
             local character = interpreter:visit(AST.CharacterConstant:new({ value = elements[i] }))
@@ -1223,7 +1206,7 @@ local __string_right_trim__function = function(interpreter, params)
     end
 
     local second = interpreter:visit(params[2])
-    if second.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if second.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast second SimpleBaseString
@@ -1239,7 +1222,7 @@ local __string_right_trim__function = function(interpreter, params)
         end
     end
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = stringValue })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = stringValue })
     return result
 end
 
@@ -1252,12 +1235,12 @@ local __subseq__function = function(interpreter, params)
     end
 
     local simpleBaseString = interpreter:visit(params[1])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
 
     local left = interpreter:visit(params[2])
-    if left.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if left.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
 
@@ -1270,11 +1253,11 @@ local __subseq__function = function(interpreter, params)
         if leftValue < 0 or leftValue >= #stringValue then
             error(InterpreterError:new({}))
         end
-        local result = VALUE.SimpleBaseString:new({ stringValue = string.sub(stringValue, leftValue + 1) })
+        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.sub(stringValue, leftValue + 1) })
         return result
     elseif #params == 3 then
         local right = interpreter:visit(params[3])
-        if right.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+        if right.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
 
@@ -1283,7 +1266,8 @@ local __subseq__function = function(interpreter, params)
         if leftValue > rightValue or leftValue < 0 or leftValue >= #stringValue or rightValue >= #stringValue then
             error(InterpreterError:new({}))
         end
-        local result = VALUE.SimpleBaseString:new({ stringValue = string.sub(stringValue, leftValue + 1, rightValue + 1) })
+        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.sub(stringValue, leftValue + 1,
+            rightValue + 1) })
         return result
     else
         error(InterpreterError:new({}))
@@ -1299,19 +1283,19 @@ local __substitute__function = function(interpreter, params)
     end
 
     local srcCharacter = interpreter:visit(params[1])
-    if srcCharacter.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+    if srcCharacter.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
         error(InterpreterError:new({}))
     end
     ---@cast srcCharacter Character
 
     local dstCharacter = interpreter:visit(params[2])
-    if dstCharacter.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+    if dstCharacter.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
         error(InterpreterError:new({}))
     end
     ---@cast dstCharacter Character
 
     local simpleBaseString = interpreter:visit(params[3])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
@@ -1323,7 +1307,7 @@ local __substitute__function = function(interpreter, params)
     local stringValue = simpleBaseString.stringValue
     local newStringValue = string.gsub(stringValue, srcChar, dstChar)
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = newStringValue })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = newStringValue })
     return result
 end
 
@@ -1338,14 +1322,14 @@ local __symbol_name__function = function(interpreter, params)
     interpreter:toggleDeclaring()
     local symbol = interpreter:visit(params[1])
     interpreter:toggleDeclaring()
-    if symbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
+    if symbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
         error(InterpreterError:new({}))
     end
     ---@cast symbol Symbol
 
     local symbolName = symbol.name
 
-    local result = VALUE.SimpleBaseString:new({ stringValue = string.upper(symbolName) })
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.upper(symbolName) })
     return result
 end
 
@@ -1358,13 +1342,13 @@ local __remove__function = function(interpreter, params)
     end
 
     local character = interpreter:visit(params[1])
-    if character.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+    if character.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
         error(InterpreterError:new({}))
     end
     ---@cast character Character
 
     local simpleBaseString = interpreter:visit(params[2])
-    if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+    if simpleBaseString.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
     ---@cast simpleBaseString SimpleBaseString
@@ -1374,13 +1358,13 @@ local __remove__function = function(interpreter, params)
     local stringValue = simpleBaseString.stringValue
 
     if #params == 2 then
-        local result = VALUE.SimpleBaseString:new({ stringValue = string.gsub(stringValue, ch, "") })
+        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.gsub(stringValue, ch, "") })
         return result
     elseif #params == 4 then
         interpreter:toggleDeclaring()
         local symbol = interpreter:visit(params[3])
         interpreter:toggleDeclaring()
-        if symbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
+        if symbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
             error(InterpreterError:new({}))
         end
         ---@cast symbol Symbol
@@ -1388,7 +1372,7 @@ local __remove__function = function(interpreter, params)
             error(InterpreterError:new({}))
         end
         local fixNum = interpreter:visit(params[4])
-        if fixNum.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+        if fixNum.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
         ---@cast fixNum FixNum
@@ -1396,7 +1380,8 @@ local __remove__function = function(interpreter, params)
         if intValue >= string.len(stringValue) then
             error(InterpreterError:new({}))
         end
-        local result = VALUE.SimpleBaseString:new({ stringValue = string.gsub(stringValue, ch, "", intValue + 1) })
+        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.gsub(stringValue, ch, "",
+            intValue + 1) })
         return result
     else
         error(InterpreterError:new({}))
@@ -1412,9 +1397,9 @@ local __append__function = function(interpreter, params)
     end
 
     local cons = interpreter:visit(params[1])
-    if cons.classType == VALUE.BUILT_IN_CLASS.NULL then
+    if cons.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
         return cons
-    elseif cons.classType ~= VALUE.BUILT_IN_CLASS.CONS then
+    elseif cons.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CONS then
         error(InterpreterError:new({}))
     end
     ---@cast cons Cons
@@ -1425,7 +1410,7 @@ local __append__function = function(interpreter, params)
         ;
     elseif #params == 2 then
         local second = interpreter:visit(params[2])
-        if second.classType == VALUE.BUILT_IN_CLASS.CONS then
+        if second.classType == BuiltinClassModule.BUILT_IN_CLASS.CONS then
             ---@cast second Cons
             local secondElements = second.elements
             for _, value in pairs(secondElements) do
@@ -1438,7 +1423,7 @@ local __append__function = function(interpreter, params)
         ;
     end
 
-    local result = VALUE.Cons:new({ elements = elements })
+    local result = BuiltinClassModule.Cons:new({ elements = elements })
     return result
 end
 
@@ -1451,10 +1436,10 @@ local __first_function = function(interpreter, params)
     end
 
     local list = interpreter:visit(params[1])
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     end
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
@@ -1462,7 +1447,7 @@ local __first_function = function(interpreter, params)
     local elements = list.elements
 
     if #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     local result = elements[1]
@@ -1478,10 +1463,10 @@ local __last_function = function(interpreter, params)
     end
 
     local list = interpreter:visit(params[1])
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     end
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
@@ -1489,7 +1474,7 @@ local __last_function = function(interpreter, params)
     local elements = list.elements
 
     if #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     local result = elements[#elements]
@@ -1505,16 +1490,16 @@ local __length_function = function(interpreter, params)
     end
 
     local param = interpreter:visit(params[1])
-    if param.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.FixNum:new({ intValue = 0 })
-    elseif param.superClassType == VALUE.BUILT_IN_CLASS.LIST then
+    if param.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.FixNum:new({ intValue = 0 })
+    elseif param.superClassType == BuiltinClassModule.BUILT_IN_CLASS.LIST then
         ---@cast param List
         local elements = param.elements
-        return VALUE.FixNum:new({ intValue = #elements })
-    elseif param.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
+        return BuiltinClassModule.FixNum:new({ intValue = #elements })
+    elseif param.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         ---@cast param SimpleBaseString
         local stringValue = param.stringValue
-        return VALUE.FixNum:new({ intValue = string.len(stringValue) })
+        return BuiltinClassModule.FixNum:new({ intValue = string.len(stringValue) })
     else
         error(InterpreterError:new({}))
     end
@@ -1531,10 +1516,10 @@ local __find_function = function(interpreter, params)
     local item = interpreter:visit(params[1])
 
     local list = interpreter:visit(params[2])
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     end
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
@@ -1542,7 +1527,7 @@ local __find_function = function(interpreter, params)
     local elements = list.elements
 
     if #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     for i = 1, #elements, 1 do
@@ -1551,7 +1536,7 @@ local __find_function = function(interpreter, params)
         end
     end
 
-    return VALUE.Null:new({})
+    return BuiltinClassModule.Null:new({})
 end
 
 ---@param interpreter Interpreter
@@ -1565,10 +1550,10 @@ local __position_function = function(interpreter, params)
     local item = interpreter:visit(params[1])
 
     local list = interpreter:visit(params[2])
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     end
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
@@ -1576,16 +1561,16 @@ local __position_function = function(interpreter, params)
     local elements = list.elements
 
     if #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     for i = 1, #elements, 1 do
         if elements[i] == item then
-            return VALUE.FixNum:new({ intValue = i - 1 })
+            return BuiltinClassModule.FixNum:new({ intValue = i - 1 })
         end
     end
 
-    return VALUE.Null:new({})
+    return BuiltinClassModule.Null:new({})
 end
 
 ---@param interpreter Interpreter
@@ -1599,10 +1584,10 @@ local __member_function = function(interpreter, params)
     local item = interpreter:visit(params[1])
 
     local list = interpreter:visit(params[2])
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     end
-    if list.classType ~= VALUE.BUILT_IN_CLASS.CONS then
+    if list.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CONS then
         error(InterpreterError:new({}))
     end
 
@@ -1610,7 +1595,7 @@ local __member_function = function(interpreter, params)
     local elements = list.elements
 
     if #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     local index = -1
@@ -1622,13 +1607,13 @@ local __member_function = function(interpreter, params)
     end
 
     if index == -1 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     else
         local newElements = {}
         for i = index, #elements, 1 do
             table.insert(newElements, elements[i])
         end
-        return VALUE.Cons:new({ elements = newElements })
+        return BuiltinClassModule.Cons:new({ elements = newElements })
     end
 end
 
@@ -1641,10 +1626,10 @@ local __rest_function = function(interpreter, params)
     end
 
     local list = interpreter:visit(params[1])
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     end
-    if list.classType ~= VALUE.BUILT_IN_CLASS.CONS then
+    if list.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CONS then
         error(InterpreterError:new({}))
     end
 
@@ -1652,7 +1637,7 @@ local __rest_function = function(interpreter, params)
     local elements = list.elements
 
     if #elements <= 1 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     end
 
     local newElements = {}
@@ -1660,7 +1645,7 @@ local __rest_function = function(interpreter, params)
         table.insert(newElements, elements[i])
     end
 
-    local result = VALUE.Cons:new({ elements = newElements })
+    local result = BuiltinClassModule.Cons:new({ elements = newElements })
     return result
 end
 
@@ -1700,21 +1685,21 @@ local __push_function = function(interpreter, params)
     local newElements = {}
     table.insert(newElements, item)
 
-    if origin.classType == VALUE.BUILT_IN_CLASS.CONS then
+    if origin.classType == BuiltinClassModule.BUILT_IN_CLASS.CONS then
         ---@cast origin Cons
         local elements = origin.elements
         for i = 1, #elements, 1 do
             table.insert(newElements, elements[i])
         end
-    elseif origin.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
+    elseif origin.classType == BuiltinClassModule.BUILT_IN_CLASS.SIMPLE_VECTOR then
         table.insert(newElements, origin)
-    elseif origin.classType == VALUE.BUILT_IN_CLASS.NULL then
+    elseif origin.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
         ;
     else
         table.insert(newElements, origin)
     end
 
-    interpreter:add(symbol, VALUE.Cons:new({ elements = newElements }))
+    interpreter:add(symbol, BuiltinClassModule.Cons:new({ elements = newElements }))
     return symbol
 end
 
@@ -1739,7 +1724,7 @@ local __gethash_function = function(interpreter, params)
     interpreter:toggleDeclaring()
 
     local hashTable = interpreter:visit(params[2])
-    if hashTable.classType ~= VALUE.BUILT_IN_CLASS.HASH_TABLE then
+    if hashTable.classType ~= BuiltinClassModule.BUILT_IN_CLASS.HASH_TABLE then
         error(InterpreterError:new({}))
     end
 
@@ -1748,13 +1733,13 @@ local __gethash_function = function(interpreter, params)
         hashValue.extras = {}
         table.insert(hashValue.extras, hashKey)
         table.insert(hashValue.extras, hashTable)
-        table.insert(hashValue.extras, VALUE.True:new({}))
+        table.insert(hashValue.extras, BuiltinClassModule.True:new({}))
         return hashValue
     else
-        local result = VALUE.Null:new({ extras = {} })
+        local result = BuiltinClassModule.Null:new({ extras = {} })
         table.insert(result.extras, hashKey)
         table.insert(result.extras, hashTable)
-        table.insert(result.extras, VALUE.Null:new({}))
+        table.insert(result.extras, BuiltinClassModule.Null:new({}))
         return result
     end
 end
@@ -1776,18 +1761,18 @@ local __remhash_function = function(interpreter, params)
     interpreter:toggleDeclaring()
 
     local hashTable = interpreter:visit(params[2])
-    if hashTable.classType ~= VALUE.BUILT_IN_CLASS.HASH_TABLE then
+    if hashTable.classType ~= BuiltinClassModule.BUILT_IN_CLASS.HASH_TABLE then
         error(InterpreterError:new({}))
     end
 
     local hashValue = hashTable:get(hashKey)
     if hashValue ~= nil then
         hashValue.extras = {}
-        hashTable:set(hashKey, VALUE.Null:new({ extras = {} }))
-        local result = VALUE.True:new({ extras = {} })
+        hashTable:set(hashKey, BuiltinClassModule.Null:new({ extras = {} }))
+        local result = BuiltinClassModule.True:new({ extras = {} })
         return result
     else
-        local result = VALUE.Null:new({ extras = {} })
+        local result = BuiltinClassModule.Null:new({ extras = {} })
         return result
     end
 end
@@ -1800,7 +1785,7 @@ local __make_instance_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     local class = interpreter:visit(params[1])
-    if class.classType ~= VALUE.BUILT_IN_CLASS.STANDARD_CLASS then
+    if class.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_CLASS then
         error(InterpreterError:new({}))
     end
     ---@cast class StandardClass
@@ -1829,26 +1814,18 @@ end
 ---@param interpreter Interpreter
 ---@param  params table<Expr, integer>
 ---@return T
-local __inspect_function = function(interpreter, params)
-    -- TODO:
-    return {}
-end
-
----@param interpreter Interpreter
----@param  params table<Expr, integer>
----@return T
 local __slot_value_function = function(interpreter, params)
     if #params ~= 2 then
         error(InterpreterError:new({}))
     end
     local instance = interpreter:visit(params[1])
-    if instance.classType ~= VALUE.BUILT_IN_CLASS.STANDARD_INSTANCE then
+    if instance.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_INSTANCE then
         error(InterpreterError:new({}))
     end
     interpreter:toggleDeclaring()
     local fieldSymbol = interpreter:visit(params[2])
     interpreter:toggleDeclaring()
-    if fieldSymbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
+    if fieldSymbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
         error(InterpreterError:new({}))
     end
     local result = instance:get(fieldSymbol)
@@ -1865,6 +1842,46 @@ local __with_slots_function = function(interpreter, params)
     return {}
 end
 
+---@param interpreter Interpreter
+---@param params table<Expr, integer>
+---@return T
+local __type_of__function = function(interpreter, params)
+    if #params ~= 1 then
+        error(InterpreterError:new({}))
+    end
+    local ast = params[1]
+    if ast.astType == AST.AST_TYPE.VARIABLE then
+        return BuiltinClassModule.ValueType:new({ typeName = "BIT" })
+    end
+    if ast.astType == AST.AST_TYPE.LAMBDA_DECLARATION then
+        return BuiltinClassModule.ValueType:new({ typeName = "FUNCTION" })
+    end
+    local result = interpreter:visit(ast)
+    return result:asType()
+end
+
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __inspect_function = function(interpreter, params)
+    if #params ~= 1 then
+        error(InterpreterError:new({}))
+    end
+    local result = interpreter:visit(params[1])
+    return result:asLayout()
+end
+
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local _class_of_function = function(interpreter, params)
+    if #params ~= 1 then
+        error(InterpreterError:new({}))
+    end
+    local result = interpreter:visit(params[1])
+    return result:asClass()
+end
+
 ---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
     ["make-instance"]     = __make_instance_function,
@@ -1874,7 +1891,7 @@ local BUILT_IN_FUNCTION = {
     ["setf"]              = __setf__function,
     ["setq"]              = __setq__function,
     ["format"]            = function(...) end,
-    ["class-of"]          = function(...) end,
+    ["class-of"]          = _class_of_function,
     ["type-of"]           = __type_of__function,
     ["find-class"]        = function(...) end,
     ["class-name"]        = function(...) end,
