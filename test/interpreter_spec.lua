@@ -4,7 +4,7 @@ local Interpreter = require("src.interpreter").Interpreter
 local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
-describe("Parser tests", function()
+describe("Interpreter tests", function()
     local TEST_INTERPRETER = function(text, ...)
     end
     local TEST_INTERPRETER_ERROR = function(text)
@@ -1187,12 +1187,12 @@ describe("Parser tests", function()
                     (defvar m (make-hash-table))
                     (setf (gethash 'm1 m) (make-hash-table) )
                     (setf (gethash 'a (gethash 'm1 m)) 1 )
-					(gethash 'a (gethash 'm1 m))
+            		(gethash 'a (gethash 'm1 m))
                 ]],
                 VALUE.Symbol:new({ name = "m" }),
                 VALUE.HashTable:new({
                     entries = {
-                        a = VALUE.FixNum:new({ intValue = 1 }),
+                        ["SYMBOL<a>"] = VALUE.FixNum:new({ intValue = 1 }),
                     }
                 }),
                 VALUE.FixNum:new({ intValue = 1 }),
@@ -1428,6 +1428,514 @@ describe("Parser tests", function()
                     VALUE.FixNum:new({ intValue = 3 }),
                 }
             }))
+        end)
+    end)
+    context("CLOS", function()
+        it("make-instance", function()
+            TEST_INTERPRETER_ERROR([[(make-instance 'person)]])
+            TEST_INTERPRETER_ERROR([[(defvar p1 (make-instance 'person))]])
+            TEST_INTERPRETER_ERROR([[
+                (defclass person ()())
+                (defvar p1 (make-instance 'person :name "me"))
+            ]])
+        end)
+        it("slot-value", function()
+            TEST_INTERPRETER_ERROR([[(slot-value p1 'name)]])
+            TEST_INTERPRETER_ERROR([[
+                    (defclass person ()())
+                    (defvar p1 (make-instance 'person))
+                    (name p1)
+            ]])
+        end)
+        it("class with empty slots", function()
+            TEST_INTERPRETER(
+                [[
+                    (defclass person ()())
+                    (defvar p1 (make-instance 'person))
+                    p1
+            ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                VALUE.Symbol:new({ name = "p1" }),
+                VALUE.StandardInstance:new({
+                    classRef = VALUE.StandardClass:new({
+                        name = VALUE.Symbol:new({ name = "person" }),
+                        initArgs = {},
+                        superClassRefs = {},
+                        staticFields = {},
+                        instanceFields = {},
+                        methods = {},
+                    }),
+                    fields = {},
+                })
+            )
+        end)
+        it("class with slots", function()
+            TEST_INTERPRETER(
+                [[
+                    (defclass person ()
+                    ((name :initarg :name :initform "me" :accessor name :writer setName :reader getName)
+                    (age :initarg :age  :accessor age :writer setAge :reader getAge)
+                    ))
+                    (defvar p1 (make-instance 'person :age 10))
+                    (getName p1)
+                    (setf (setName p1) "omf")
+                    (slot-value p1 'age)
+                    (setf (slot-value p1 'age) 18)
+            ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "setName" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "getName" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "setAge" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "getAge" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                    },
+                }),
+                VALUE.Symbol:new({ name = "p1" }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "me"
+                }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "omf"
+                }),
+                VALUE.FixNum:new({ intValue = 10 }),
+                VALUE.FixNum:new({ intValue = 18 })
+            )
+        end)
+        it("class with allocation slots", function()
+            TEST_INTERPRETER(
+                [[
+                (defclass person ()
+                    ((name :initarg :name :initform "me" :accessor name))
+                )
+                (defvar p1 (make-instance 'person))
+                (defvar p2 (make-instance 'person))
+                (setf (name p1) "omf")
+                (name p1)
+                (name p2)
+            ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                    },
+                }),
+                VALUE.Symbol:new({ name = "p1" }),
+                VALUE.Symbol:new({ name = "p2" }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "omf"
+                }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "omf"
+                }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "me"
+                })
+            )
+            TEST_INTERPRETER(
+                [[
+                    (defclass person ()
+                        ((name :initarg :name :initform "me" :accessor name :allocation class))
+                    )
+                    (defvar p1 (make-instance 'person))
+                    (defvar p2 (make-instance 'person))
+                    (setf (name p1) "omf")
+                    (name p1)
+                    (name p2)
+            ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    superClassRefs = {},
+                    staticFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "omf" }),
+                    },
+                    instanceFields = {},
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                    },
+                }),
+                VALUE.Symbol:new({ name = "p1" }),
+                VALUE.Symbol:new({ name = "p2" }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "omf"
+                }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "omf"
+                }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "omf"
+                })
+            )
+        end)
+        it("inheritance", function()
+            TEST_INTERPRETER(
+                [[
+                    (defclass person ()
+                        ((name :initarg :name :initform "me" :accessor name))
+                    )
+                    (defclass user (person)
+                        ((age :initarg :age :accessor age))
+                    )
+                    (defvar u1 (make-instance 'user :age 10))
+                    (name u1)
+                    (age u1)
+            ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                    },
+                }),
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "user" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    superClassRefs = {
+                        VALUE.StandardClass:new({
+                            name = VALUE.Symbol:new({ name = "person" }),
+                            initArgs = {
+                                [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({
+                                    stringValue =
+                                    "me"
+                                }),
+                            },
+                            superClassRefs = {},
+                            staticFields = {},
+                            instanceFields = {
+                                [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({
+                                    stringValue =
+                                    "me"
+                                }),
+                            },
+                            methods = {
+                                [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                                    isAccessorMethod = true,
+                                    func = BuiltinFunction:new({
+                                        name = "slot-value",
+                                        func = NativeMethod:find(
+                                            "slot-value")
+                                    }),
+                                    target = VALUE.Symbol:new({ name = "name" }),
+                                }),
+                            },
+                        })
+                    },
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                    },
+                }),
+                VALUE.Symbol:new({ name = "u1" }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "me"
+                }),
+                VALUE.FixNum:new({ intValue = 10 })
+            )
+            TEST_INTERPRETER(
+                [[
+                    (defclass father ()
+                        ((name :initarg :name :initform "me" :accessor name))
+                    )
+                    (defclass mother ()
+                        ((age :initarg :age :accessor age))
+                    )
+                    (defclass person (father mother)
+                        ()
+                    )
+                    (defvar p1 (make-instance 'person :age 10))
+                    (name p1)
+                    (age p1)
+            ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "father" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                    },
+                }),
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "mother" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                    },
+                }),
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    superClassRefs = {
+                        VALUE.StandardClass:new({
+                            name = VALUE.Symbol:new({ name = "father" }),
+                            initArgs = {
+                                [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({
+                                    stringValue =
+                                    "me"
+                                }),
+                            },
+                            superClassRefs = {},
+                            staticFields = {},
+                            instanceFields = {
+                                [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({
+                                    stringValue =
+                                    "me"
+                                }),
+                            },
+                            methods = {
+                                [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                                    isAccessorMethod = true,
+                                    func = BuiltinFunction:new({
+                                        name = "slot-value",
+                                        func = NativeMethod:find(
+                                            "slot-value")
+                                    }),
+                                    target = VALUE.Symbol:new({ name = "name" }),
+                                }),
+                            },
+                        }),
+                        VALUE.StandardClass:new({
+                            name = VALUE.Symbol:new({ name = "mother" }),
+                            initArgs = {
+                                [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                            },
+                            superClassRefs = {},
+                            staticFields = {},
+                            instanceFields = {
+                                [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                            },
+                            methods = {
+                                [VALUE.Symbol:new({ name = "age" }):asKey()] = Method:new({
+                                    isAccessorMethod = true,
+                                    func = BuiltinFunction:new({
+                                        name = "slot-value",
+                                        func = NativeMethod:find(
+                                            "slot-value")
+                                    }),
+                                    target = VALUE.Symbol:new({ name = "age" }),
+                                }),
+                            },
+                        }),
+                    },
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = VALUE.SimpleBaseString:new({ stringValue = "me" }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "name" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "name" }),
+                        }),
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = Method:new({
+                            isAccessorMethod = true,
+                            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                    },
+                }),
+                VALUE.Symbol:new({ name = "p1" }),
+                VALUE.SimpleBaseString:new({
+                    stringValue = "me"
+                }),
+                VALUE.FixNum:new({ intValue = 10 })
+            )
+        end)
+        it("defmethod", function()
+            TEST_INTERPRETER(
+                [[
+                    (defmethod add (a b)(+ a b))
+                    (add 1 2)
+                ]],
+                VALUE.Method:new({
+                    name = VALUE.Symbol:new({ name = "add" }),
+                    isAccessorMethod = false,
+                    params = {
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                    },
+                    expressions = {
+                        AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ name = "+", func = NativeMethod:find("+") }),
+                            params = {
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                            },
+                        })
+                    },
+                }),
+                VALUE.FixNum:new({ intValue = 3 })
+            )
+            TEST_INTERPRETER(
+                [[
+                    (defclass person ()((age :initarg :age :accessor age)))
+                    (defmethod grow ((p person) a b)(+ (age p) a b))
+                    (defvar p1 (make-instance 'person :age 10))
+                    (grow p1 1 2)
+                ]],
+                VALUE.StandardClass:new({
+                    name = VALUE.Symbol:new({ name = "person" }),
+                    initArgs = {
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+                    },
+                    methods = {
+                        [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Method:new({
+                            isAccessorMethod = true,
+                            func = VALUE.BuiltinFunction:new({
+                                name = "slot-value",
+                                func = NativeMethod:find(
+                                    "slot-value")
+                            }),
+                            target = VALUE.Symbol:new({ name = "age" }),
+                        }),
+                    },
+                }),
+                VALUE.Method:new({
+                    name = VALUE.Symbol:new({ name = "grow" }),
+                    isAccessorMethod = false,
+                    params = {
+                        AST.TypedParam:new({
+                            name  = AST.Variable:new({ value = VALUE.Symbol:new({ name = "p" }) }),
+                            value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                        }),
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                        AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                    },
+                    expressions = {
+                        AST.FunctionCall:new({
+                            value = VALUE.BuiltinFunction:new({ name = "+", func = NativeMethod:find("+") }),
+                            params = {
+                                AST.FunctionCall:new({
+                                    params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "p" }) }) },
+                                    value  = VALUE.Symbol:new({ name = "age" }),
+                                }),
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                            },
+                        })
+                    },
+                }),
+                VALUE.Symbol:new({ name = "p1" }),
+                VALUE.FixNum:new({ intValue = 13 })
+            )
         end)
     end)
 end)

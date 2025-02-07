@@ -7,7 +7,9 @@ local BUILT_IN_CLASS = {
     VALUE_TYPE            = 'ValueType',
     STANDARD_OBJECT       = 'StandardObject',
     STRUCTURE_OBJECT      = 'StructureObject',
-    CLASS                 = 'Class',
+    STANDARD_CLASS        = 'StandardClass',
+    SLOT_VALUE            = 'SlotValue',
+    STANDARD_INSTANCE     = 'StandardInstance',
     GENERIC_FUNCTION      = 'GenericFunction',
     METHOD                = 'Method',
     TRUE                  = 'True',
@@ -40,7 +42,9 @@ local BUILT_IN_CLASS = {
 ---| '"Cons"'
 ---| '"StandardObject"'
 ---| '"StructureObject"'
----| '"Class"'
+---| '"StandardClass"'
+---| '"SlotValue"'
+---| '"StandardInstance"'
 ---| '"GenericFunction"'
 ---| '"Method"'
 ---| '"True"'
@@ -111,6 +115,19 @@ function T:asKey()
     return "<T>"
 end
 
+---@param key T
+---@param value T
+---@return nil
+function T:set(key, value)
+    error({})
+end
+
+---@param key T
+---@return T
+function T:get(key)
+    error({})
+end
+
 ---@class ValueType : T
 ---@field typeName string
 ValueType = T:new({ classType = BUILT_IN_CLASS.VALUE_TYPE, typeName = "" })
@@ -141,36 +158,39 @@ function ValueType:asString()
     return self.typeName
 end
 
----@class StandardObject : T
-StandardObject  = T:new({ classType = BUILT_IN_CLASS.STANDARD_OBJECT, })
+---@class Symbol : T
+---@field name string
+Symbol = T:new({ classType = BUILT_IN_CLASS.SYMBOL, name = "" })
 
----@class StructureObject : T
-StructureObject = T:new({ classType = BUILT_IN_CLASS.STRUCTURE_OBJECT, isStructureObject = true })
-
----@class Class : T
-Class           = T:new({ classType = BUILT_IN_CLASS.CLASS, })
-
----@class GenericFunction : T
-GenericFunction = T:new({ classType = BUILT_IN_CLASS.GENERIC_FUNCTION, })
-
----@class Method : T
-Method          = T:new({ classType = BUILT_IN_CLASS.METHOD, })
-
----@class True : T
-True            = T:new({ classType = BUILT_IN_CLASS.TRUE, })
-
----@param obj1 True
----@param obj2 True
-function True.__eq(obj1, obj2)
-    if tostring(obj1) == tostring(obj2) then
-        return true
-    end
-    return obj1.classType == obj2.classType
+---@param o any
+---@return Symbol
+function Symbol:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
 end
 
 ---@return ValueType
-function True:asType()
-    return ValueType:new({ typeName = "BOOLEAN" })
+function Symbol:asType()
+    return ValueType:new({ typeName = "SYMBOL" })
+end
+
+---@return string
+function Symbol:asKey()
+    return string.format("SYMBOL<%s>", self.name)
+end
+
+---@param obj1 Symbol
+---@param obj2 Symbol
+function Symbol.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    return obj1.name == obj2.name
 end
 
 ---@class Null : T
@@ -193,6 +213,286 @@ end
 ---@return ValueType
 function Null:asType()
     return ValueType:new({ typeName = "NULL" })
+end
+
+---@class StandardObject : T
+StandardObject  = T:new({ classType = BUILT_IN_CLASS.STANDARD_OBJECT, })
+
+---@class StructureObject : T
+StructureObject = T:new({ classType = BUILT_IN_CLASS.STRUCTURE_OBJECT, isStructureObject = true })
+
+---@class StandardClass : T
+---@field name Symbol
+---@field superClassRefs table<integer, StandardClass>
+---@field initArgs table<Symbol , T>
+---@field staticFields table<Symbol , T>
+---@field instanceFields table<Symbol, T>
+---@field methods table<string, T>
+StandardClass   = T:new({
+    classType = BUILT_IN_CLASS.STANDARD_CLASS,
+    name = Symbol:new({}),
+    superClassRefs = {},
+    initArgs = {},
+    staticFields = {},
+    instanceFields = {},
+    methods = {},
+})
+
+---@param o any
+---@return StandardClass
+function StandardClass:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---set static field
+---@param key T
+---@param value T
+---@return nil
+function StandardClass:set(key, value)
+    self.staticFields[key:asKey()] = value
+end
+
+---get static field
+---@param key T
+---@return T
+function StandardClass:get(key)
+    local value = self.staticFields[key:asKey()]
+    if value == nil then
+        for _, superClass in pairs(self.superClassRefs) do
+            if superClass ~= nil then
+                return superClass:get(key)
+            end
+        end
+        return Null:new({})
+    else
+        return value
+    end
+end
+
+---@param key T
+---@param value T
+---@return nil
+function StandardClass:setMethod(key, value)
+    self.methods[key:asKey()] = value
+end
+
+---@param key T
+---@return T | nil
+function StandardClass:getMethod(key)
+    local value = self.methods[key:asKey()]
+    if value == nil then
+        for _, superClass in pairs(self.superClassRefs) do
+            if superClass ~= nil then
+                return superClass:getMethod(key)
+            end
+        end
+        return nil
+    else
+        return value
+    end
+end
+
+---@return string
+function StandardClass:asString()
+    error({})
+end
+
+---@return string
+function StandardClass:asClass()
+    local s = tostring(self)
+    local address = string.gsub(s, 'table: ', '')
+    address = string.sub(address, 6, 15)
+    return string.format("#<STANDARD-CLASS> %s {%s}", string.upper(self.name.name), address)
+end
+
+---@return ValueType
+function StandardClass:asType()
+    error({})
+end
+
+---@param obj1 StandardClass
+---@param obj2 StandardClass
+function StandardClass.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    if obj1.name ~= obj2.name then
+        return false
+    end
+    if #obj1.superClassRefs ~= #obj2.superClassRefs then
+        return false
+    end
+    for key, _ in pairs(obj1.superClassRefs) do
+        if obj1.superClassRefs[key] ~= obj2.superClassRefs[key] then
+            return false
+        end
+    end
+    if #obj1.staticFields ~= #obj2.staticFields then
+        return false
+    end
+    for key, _ in pairs(obj1.staticFields) do
+        if obj1.staticFields[key] ~= obj2.staticFields[key] then
+            return false
+        end
+    end
+    if #obj1.instanceFields ~= #obj2.instanceFields then
+        return false
+    end
+    for key, _ in pairs(obj1.instanceFields) do
+        if obj1.instanceFields[key] ~= obj2.instanceFields[key] then
+            return false
+        end
+    end
+    if #obj1.methods ~= #obj2.methods then
+        return false
+    end
+    for key, _ in pairs(obj1.methods) do
+        if obj1.methods[key] ~= obj2.methods[key] then
+            return false
+        end
+    end
+    return true
+end
+
+---@class SlotValue : T
+---@field name T
+---@field accessor T
+---@field accessorSymbol T
+---@field reader T
+---@field readerSymbol T
+---@field writer T
+---@field writerSymbol T
+---@field allocation Symbol
+---@field initarg T
+---@field initform T
+SlotValue = T:new({
+    classType = BUILT_IN_CLASS.SLOT_VALUE,
+    name = Null:new({}),
+    accessor = Null:new({}),
+    accessorSymbol = Null:new({}),
+    reader = Null:new({}),
+    readerSymbol = Null:new({}),
+    writer = Null:new({}),
+    writerSymbol = Null:new({}),
+    allocation = Symbol:new({}),
+    initarg = Null:new({}),
+    initform = Null:new({}),
+})
+
+---@param o any
+---@return SlotValue
+function SlotValue:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---@class StandardInstance : T
+---@field classRef StandardClass
+---@field fields table<Symbol, T>
+StandardInstance = T:new({
+    classType = BUILT_IN_CLASS.STANDARD_INSTANCE,
+    classRef = StandardClass,
+    fields = {},
+})
+
+---@param o any
+---@return StandardInstance
+function StandardInstance:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---@param key T
+---@param value T
+---@return nil
+function StandardInstance:set(key, value)
+    local isStaticField = self.classRef:get(key).classType ~= BUILT_IN_CLASS.NULL
+    if isStaticField then
+        self.classRef:set(key, value)
+    else
+        self.fields[key:asKey()] = value
+    end
+end
+
+---@param key T
+---@return T
+function StandardInstance:get(key)
+    local value = self.fields[key:asKey()]
+    if value == nil then
+        return self.classRef:get(key)
+    else
+        return value
+    end
+end
+
+---@return string
+function StandardInstance:asClass()
+    return self.classRef:asClass()
+end
+
+---@return ValueType
+function StandardInstance:asType()
+    ---@diagnostic disable-next-line: undefined-field
+    return ValueType:new({ stringValue = string.upper(self.classRef.name.name) })
+end
+
+---@param obj1 StandardInstance
+---@param obj2 StandardInstance
+function StandardInstance.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    if obj1.classType ~= obj2.classType then
+        return false
+    end
+    if obj1.classRef ~= obj2.classRef then
+        return false
+    end
+    if #obj1.fields ~= #obj2.fields then
+        return false
+    end
+    for i = 1, #obj1.fields, 1 do
+        if obj1.fields[i] ~= obj2.fields[i] then
+            return false
+        end
+    end
+    return true
+end
+
+---@return string
+function StandardInstance:asString()
+    local s = tostring(self)
+    local address = string.gsub(s, 'table: ', '')
+    address = string.sub(address, 6, 15)
+    ---@diagnostic disable-next-line: undefined-field
+    return string.format("#<%s> {%s}", string.upper(self.classRef.name.name), address)
+end
+
+---@class True : T
+True = T:new({ classType = BUILT_IN_CLASS.TRUE, })
+
+---@param obj1 True
+---@param obj2 True
+function True.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    return obj1.classType == obj2.classType
+end
+
+---@return ValueType
+function True:asType()
+    return ValueType:new({ typeName = "BOOLEAN" })
 end
 
 ---include user-defined function and builtin function
@@ -312,30 +612,34 @@ function LambdaFunction.__eq(obj1, obj2)
     return true
 end
 
----@class Symbol : T
----@field name string
-Symbol = T:new({ classType = BUILT_IN_CLASS.SYMBOL, name = "" })
+---@class GenericFunction : T
+GenericFunction = T:new({ classType = BUILT_IN_CLASS.GENERIC_FUNCTION, })
 
----@return ValueType
-function Symbol:asType()
-    return ValueType:new({ typeName = "SYMBOL" })
+---@class Method : UserDefinedFunction
+---@field name Symbol
+---@field isAccessorMethod boolean
+---@field func BuiltinFunction | nil
+---@field target Symbol
+Method          = UserDefinedFunction:new({
+    classType        = BUILT_IN_CLASS.METHOD,
+    name             = Symbol:new({}),
+    isAccessorMethod = false,
+    target           = Null:new({}),
+})
+
+---@param o any
+---@return Method
+function Method:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
 end
 
----@return string
-function Symbol:asKey()
-    return string.format("SYMBOL<%s>", self.name)
-end
-
----@param obj1 Symbol
----@param obj2 Symbol
-function Symbol.__eq(obj1, obj2)
-    if tostring(obj1) == tostring(obj2) then
-        return true
-    end
-    if obj1.classType ~= obj2.classType then
-        return false
-    end
-    return obj1.name == obj2.name
+---@param obj1 Method
+---@param obj2 Method
+function Method.__eq(obj1, obj2)
+    return UserDefinedFunction.__eq(obj1, obj2)
 end
 
 ---@class Number : T
@@ -948,57 +1252,17 @@ function HashTable:asType()
     return ValueType:new({ typeName = "HASH-TABLE" })
 end
 
----@param key string
+---@param key T
 ---@param value T
+---@return nil
 function HashTable:set(key, value)
-    local keys = Util.split_by_dot(key)
-    if #keys == 1 then
-        self.entries[keys[1]] = value
-    elseif #keys == 2 then
-        local subHash = self.entries[keys[1]]
-        if subHash == nil then
-            error({})
-        end
-        ---@diagnostic disable-next-line: undefined-field
-        subHash:set(keys[2], value)
-    else
-        local subHash = self.entries[keys[1]]
-        if subHash == nil then
-            error({})
-        end
-        local rest = {}
-        for i = 2, #keys, 1 do
-            table.insert(rest, keys[i])
-        end
-        ---@diagnostic disable-next-line: undefined-field
-        subHash:set(table.concat(rest, "."), value)
-    end
+    self.entries[key:asKey()] = value
 end
 
----@param key string
+---@param key T
+---@return T
 function HashTable:get(key)
-    local keys = Util.split_by_dot(key)
-    if #keys == 1 then
-        return self.entries[keys[1]]
-    elseif #keys == 2 then
-        local subHash = self.entries[keys[1]]
-        if subHash == nil then
-            error({})
-        end
-        ---@diagnostic disable-next-line: undefined-field
-        return subHash:get(keys[2])
-    else
-        local subHash = self.entries[keys[1]]
-        if subHash == nil then
-            error({})
-        end
-        local rest = {}
-        for i = 2, #keys, 1 do
-            table.insert(rest, keys[i])
-        end
-        ---@diagnostic disable-next-line: undefined-field
-        return subHash:get(table.concat(rest, "."))
-    end
+    return self.entries[key:asKey()]
 end
 
 ---@class Auxiliary : T
@@ -1032,7 +1296,9 @@ return {
     LambdaFunction = LambdaFunction,
     True = True,
     Null = Null,
-    Class = Class,
+    StandardClass = StandardClass,
+    SlotValue = SlotValue,
+    StandardInstance = StandardInstance,
     StandardObject = StandardObject,
     StructureObject = StructureObject,
     SimpleBaseString = SimpleBaseString,

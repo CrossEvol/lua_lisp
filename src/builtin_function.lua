@@ -9,6 +9,9 @@ NativeMethod = {}
 ---@class BUILT_IN_FUNCTION_NAME_SET
 local BUILT_IN_FUNCTION_NAME_SET = {
     ["make-instance"]     = 'make-instance',
+    ["inspect"]           = 'inspect',
+    ["slot-value"]        = 'slot-value',
+    ["with-slots"]        = 'with-slots',
     ["setf"]              = 'setf',
     ["setq"]              = 'setq',
     ["format"]            = 'format',
@@ -113,11 +116,16 @@ local __setq__function = function(interpreter, params)
                 local hashKey = gethashResult.extras[1]
                 local hashTable = gethashResult.extras[2]
                 local expr = interpreter:visit(params[2])
-                ---@diagnostic disable-next-line: undefined-field
-                hashTable:set(hashKey.name, expr)
+                hashTable:set(hashKey, expr)
                 return expr
             else
-                error(InterpreterError:new({}))
+                local accessorResult = interpreter:visitFunctionCall(variable)
+                local instance = accessorResult.extras[1]
+                local field = accessorResult.extras[2]
+                local expr = interpreter:visit(params[2])
+                instance:set(field, expr)
+                accessorResult.extras = {}
+                return expr
             end
         end
     else
@@ -398,7 +406,6 @@ local __eql__function = function(interpreter, params)
     end
     local left = interpreter:visit(params[1])
     local right = interpreter:visit(params[2])
-    ---@diagnostic disable-next-line: undefined-field
     if left.isStructureObject or right.isStructureObject then
         return VALUE.Null:new({})
     end
@@ -579,10 +586,10 @@ local __issqrt__function = function(interpreter, params)
     end
 
     if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number FixNum
         return VALUE.SingleFloat:new({ floatValue = math.sqrt(number.intValue) })
     elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number SingleFloat
         return VALUE.SingleFloat:new({ floatValue = math.sqrt(number.floatValue) })
     else
         error(InterpreterError:new({}))
@@ -604,12 +611,12 @@ local __random__function = function(interpreter, params)
 
     if bound.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
         -- Return a random integer between 0 and bound - 1
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast bound FixNum
         local randomInt = math.random(0, bound.intValue - 1)
         return VALUE.FixNum:new({ intValue = randomInt })
     elseif bound.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
         -- Return a random float between 0 and bound
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast bound SingleFloat
         local randomFloat = math.random() * bound.floatValue
         return VALUE.SingleFloat:new({ floatValue = randomFloat })
     else
@@ -631,17 +638,17 @@ local __ceiling__function = function(interpreter, params)
     end
 
     if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number FixNum
         local intValue = number.intValue
         return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.FixNum:new({ intValue = 0 }) } })
     elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number SingleFloat
         local floatValue = number.floatValue
         local intValue = math.ceil(floatValue)
         local gap = floatValue - intValue
         return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.SingleFloat:new({ floatValue = gap }) } })
     elseif number.classType == VALUE.BUILT_IN_CLASS.RATIONAL then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number Rational
         local floatValue = number.numerator / number.denominator
         local intValue = math.ceil(floatValue)
         local fixNum = VALUE.FixNum:new({ intValue = intValue })
@@ -666,17 +673,17 @@ local __floor__function = function(interpreter, params)
     end
 
     if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number FixNum
         local intValue = number.intValue
         return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.FixNum:new({ intValue = 0 }) } })
     elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number SingleFloat
         local floatValue = number.floatValue
         local intValue = math.floor(floatValue)
         local gap = floatValue - intValue
         return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.SingleFloat:new({ floatValue = gap }) } })
     elseif number.classType == VALUE.BUILT_IN_CLASS.RATIONAL then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number Rational
         local floatValue = number.numerator / number.denominator
         local intValue = math.floor(floatValue)
         local fixNum = VALUE.FixNum:new({ intValue = intValue })
@@ -710,17 +717,17 @@ local __round__function = function(interpreter, params)
     end
 
     if number.classType == VALUE.BUILT_IN_CLASS.FIX_NUM then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number FixNum
         local intValue = number.intValue
         return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.FixNum:new({ intValue = 0 }) } })
     elseif number.classType == VALUE.BUILT_IN_CLASS.SINGLE_FLOAT then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number SingleFloat
         local floatValue = number.floatValue
         local intValue = Round(floatValue)
         local gap = floatValue - intValue
         return VALUE.FixNum:new({ intValue = intValue, extras = { VALUE.SingleFloat:new({ floatValue = gap }) } })
     elseif number.classType == VALUE.BUILT_IN_CLASS.RATIONAL then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number Rational
         local floatValue = number.numerator / number.denominator
         local intValue = Round(floatValue)
         local fixNum = VALUE.FixNum:new({ intValue = intValue })
@@ -751,7 +758,7 @@ local __make_string__function = function(interpreter, params)
         if number.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number FixNum
         return VALUE.SimpleBaseString:new({ stringValue = string.rep(" ", number.intValue) })
     end
 
@@ -770,7 +777,7 @@ local __make_string__function = function(interpreter, params)
         if char.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
             error(InterpreterError:new({}))
         end
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast number FixNum
         return VALUE.SimpleBaseString:new({ stringValue = string.rep(char.chars:sub(3, 3), number.intValue) })
     end
 
@@ -789,8 +796,8 @@ local __string_upcase__function = function(interpreter, params)
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
+    ---@cast simpleBaseString SimpleBaseString
 
-    ---@diagnostic disable-next-line: undefined-field
     local result = VALUE.SimpleBaseString:new({ stringValue = string.upper(simpleBaseString.stringValue) })
     return result
 end
@@ -807,8 +814,8 @@ local __string_downcase__function = function(interpreter, params)
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
+    ---@cast simpleBaseString SimpleBaseString
 
-    ---@diagnostic disable-next-line: undefined-field
     local result = VALUE.SimpleBaseString:new({ stringValue = string.lower(simpleBaseString.stringValue) })
     return result
 end
@@ -825,8 +832,8 @@ local __string_capitalize__function = function(interpreter, params)
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
+    ---@cast simpleBaseString SimpleBaseString
 
-    ---@diagnostic disable-next-line: undefined-field
     local stringValue = simpleBaseString.stringValue
     local words = {}
     for word in stringValue:gmatch("%S+") do
@@ -854,10 +861,10 @@ local __char__function = function(interpreter, params)
     if fixNum.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
-
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast simpleBaseString SimpleBaseString
+    ---@
     local stringValue = simpleBaseString.stringValue
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast fixNum FixNum
     local intValue = fixNum.intValue
     if intValue >= #stringValue then
         error(InterpreterError:new({}))
@@ -949,8 +956,8 @@ local __code_char__function = function(interpreter, params)
     if fixNum.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
+    ---@cast fixNum FixNum
 
-    ---@diagnostic disable-next-line: undefined-field
     local intValue = fixNum.intValue
 
     if intValue < 0 then
@@ -984,7 +991,7 @@ local __concatenate__function = function(interpreter, params)
     if symbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast symbol Symbol
     local symbolName = symbol.name
 
 
@@ -994,7 +1001,7 @@ local __concatenate__function = function(interpreter, params)
         if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
             error(InterpreterError:new({}))
         else
-            ---@diagnostic disable-next-line: undefined-field
+            ---@cast simpleBaseString SimpleBaseString
             stringValue = stringValue .. simpleBaseString.stringValue
         end
     end
@@ -1005,7 +1012,6 @@ local __concatenate__function = function(interpreter, params)
     end
     if symbolName == "list" then
         local elements = {}
-        ---@diagnostic disable-next-line: undefined-field
         local stringValue = stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
@@ -1020,7 +1026,6 @@ local __concatenate__function = function(interpreter, params)
     end
     if symbolName == "vector" then
         local elements = {}
-        ---@diagnostic disable-next-line: undefined-field
         local stringValue = stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
@@ -1044,7 +1049,8 @@ local __reverse__function = function(interpreter, params)
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast simpleBaseString SimpleBaseString
+
     local stringValue = simpleBaseString.stringValue
     local result = VALUE.SimpleBaseString:new({ stringValue = string.reverse(stringValue) })
     return result
@@ -1061,7 +1067,8 @@ local __string__function = function(interpreter, params)
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast simpleBaseString SimpleBaseString
+
     local stringValue = simpleBaseString.stringValue
     local result = VALUE.SimpleBaseString:new({ stringValue = stringValue })
     return result
@@ -1077,21 +1084,21 @@ local __string_trim__function = function(interpreter, params)
     local first = interpreter:visit(params[1])
     local charSet = {}
     if first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast first SimpleBaseString
         local stringValue = first.stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
             charSet[ch] = true
         end
     elseif first.classType == VALUE.BUILT_IN_CLASS.CONS or first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast first List
         local elements = first.elements
         for i = 1, #elements, 1 do
             if elements[i].classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
                 error(InterpreterError:new({}))
             end
             local character = interpreter:visit(AST.CharacterConstant:new({ value = elements[i] }))
-            ---@diagnostic disable-next-line: undefined-field
+            ---@cast character Character
             local ch = string.sub(character.chars, 3)
             charSet[ch] = true
         end
@@ -1103,7 +1110,7 @@ local __string_trim__function = function(interpreter, params)
     if second.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast second SimpleBaseString
     local stringValue = second.stringValue
 
     -- trim left
@@ -1140,21 +1147,21 @@ local __string_left_trim__function = function(interpreter, params)
     local first = interpreter:visit(params[1])
     local charSet = {}
     if first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast first SimpleBaseString
         local stringValue = first.stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
             charSet[ch] = true
         end
     elseif first.classType == VALUE.BUILT_IN_CLASS.CONS or first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast first List
         local elements = first.elements
         for i = 1, #elements, 1 do
             if elements[i].classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
                 error(InterpreterError:new({}))
             end
             local character = interpreter:visit(AST.CharacterConstant:new({ value = elements[i] }))
-            ---@diagnostic disable-next-line: undefined-field
+            ---@cast character Character
             local ch = string.sub(character.chars, 3)
             charSet[ch] = true
         end
@@ -1166,7 +1173,7 @@ local __string_left_trim__function = function(interpreter, params)
     if second.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast second SimpleBaseString
     local stringValue = second.stringValue
 
     -- trim left
@@ -1193,21 +1200,21 @@ local __string_right_trim__function = function(interpreter, params)
     local first = interpreter:visit(params[1])
     local charSet = {}
     if first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast first SimpleBaseString
         local stringValue = first.stringValue
         for i = 1, string.len(stringValue), 1 do
             local ch = string.sub(stringValue, i, i)
             charSet[ch] = true
         end
     elseif first.classType == VALUE.BUILT_IN_CLASS.CONS or first.classType == VALUE.BUILT_IN_CLASS.SIMPLE_VECTOR then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast first List
         local elements = first.elements
         for i = 1, #elements, 1 do
             if elements[i].classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
                 error(InterpreterError:new({}))
             end
             local character = interpreter:visit(AST.CharacterConstant:new({ value = elements[i] }))
-            ---@diagnostic disable-next-line: undefined-field
+            ---@cast character Character
             local ch = string.sub(character.chars, 3)
             charSet[ch] = true
         end
@@ -1219,7 +1226,7 @@ local __string_right_trim__function = function(interpreter, params)
     if second.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast second SimpleBaseString
     local stringValue = second.stringValue
 
     -- trim right
@@ -1254,9 +1261,9 @@ local __subseq__function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast simpleBaseString SimpleBaseString
     local stringValue = simpleBaseString.stringValue
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast left FixNum
     local leftValue = left.intValue
 
     if #params == 2 then
@@ -1271,7 +1278,7 @@ local __subseq__function = function(interpreter, params)
             error(InterpreterError:new({}))
         end
 
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast right FixNum
         local rightValue = right.intValue
         if leftValue > rightValue or leftValue < 0 or leftValue >= #stringValue or rightValue >= #stringValue then
             error(InterpreterError:new({}))
@@ -1295,24 +1302,24 @@ local __substitute__function = function(interpreter, params)
     if srcCharacter.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
         error(InterpreterError:new({}))
     end
+    ---@cast srcCharacter Character
 
     local dstCharacter = interpreter:visit(params[2])
     if dstCharacter.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
         error(InterpreterError:new({}))
     end
+    ---@cast dstCharacter Character
 
     local simpleBaseString = interpreter:visit(params[3])
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
+    ---@cast simpleBaseString SimpleBaseString
 
-    ---@diagnostic disable-next-line: undefined-field
     local srcChar = string.sub(srcCharacter.chars, 3, 3)
 
-    ---@diagnostic disable-next-line: undefined-field
     local dstChar = string.sub(dstCharacter.chars, 3, 3)
 
-    ---@diagnostic disable-next-line: undefined-field
     local stringValue = simpleBaseString.stringValue
     local newStringValue = string.gsub(stringValue, srcChar, dstChar)
 
@@ -1334,8 +1341,8 @@ local __symbol_name__function = function(interpreter, params)
     if symbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
         error(InterpreterError:new({}))
     end
+    ---@cast symbol Symbol
 
-    ---@diagnostic disable-next-line: undefined-field
     local symbolName = symbol.name
 
     local result = VALUE.SimpleBaseString:new({ stringValue = string.upper(symbolName) })
@@ -1354,16 +1361,16 @@ local __remove__function = function(interpreter, params)
     if character.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
         error(InterpreterError:new({}))
     end
+    ---@cast character Character
 
     local simpleBaseString = interpreter:visit(params[2])
     if simpleBaseString.classType ~= VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
         error(InterpreterError:new({}))
     end
+    ---@cast simpleBaseString SimpleBaseString
 
-    ---@diagnostic disable-next-line: undefined-field
     local ch = string.sub(character.chars, 3, 3)
 
-    ---@diagnostic disable-next-line: undefined-field
     local stringValue = simpleBaseString.stringValue
 
     if #params == 2 then
@@ -1376,7 +1383,7 @@ local __remove__function = function(interpreter, params)
         if symbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
             error(InterpreterError:new({}))
         end
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast symbol Symbol
         if symbol.name ~= "start" then
             error(InterpreterError:new({}))
         end
@@ -1384,7 +1391,7 @@ local __remove__function = function(interpreter, params)
         if fixNum.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast fixNum FixNum
         local intValue = fixNum.intValue
         if intValue >= string.len(stringValue) then
             error(InterpreterError:new({}))
@@ -1410,7 +1417,7 @@ local __append__function = function(interpreter, params)
     elseif cons.classType ~= VALUE.BUILT_IN_CLASS.CONS then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast cons Cons
     local elements = cons.elements
 
 
@@ -1419,7 +1426,7 @@ local __append__function = function(interpreter, params)
     elseif #params == 2 then
         local second = interpreter:visit(params[2])
         if second.classType == VALUE.BUILT_IN_CLASS.CONS then
-            ---@diagnostic disable-next-line: undefined-field
+            ---@cast second Cons
             local secondElements = second.elements
             for _, value in pairs(secondElements) do
                 table.insert(elements, value)
@@ -1451,7 +1458,7 @@ local __first_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if #elements == 0 then
@@ -1478,7 +1485,7 @@ local __last_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if #elements == 0 then
@@ -1501,11 +1508,11 @@ local __length_function = function(interpreter, params)
     if param.classType == VALUE.BUILT_IN_CLASS.NULL then
         return VALUE.FixNum:new({ intValue = 0 })
     elseif param.superClassType == VALUE.BUILT_IN_CLASS.LIST then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast param List
         local elements = param.elements
         return VALUE.FixNum:new({ intValue = #elements })
     elseif param.classType == VALUE.BUILT_IN_CLASS.SIMPLE_BASE_STRING then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast param SimpleBaseString
         local stringValue = param.stringValue
         return VALUE.FixNum:new({ intValue = string.len(stringValue) })
     else
@@ -1531,7 +1538,7 @@ local __find_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if #elements == 0 then
@@ -1565,7 +1572,7 @@ local __position_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if #elements == 0 then
@@ -1599,7 +1606,7 @@ local __member_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if #elements == 0 then
@@ -1641,7 +1648,7 @@ local __rest_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if #elements <= 1 then
@@ -1694,7 +1701,7 @@ local __push_function = function(interpreter, params)
     table.insert(newElements, item)
 
     if origin.classType == VALUE.BUILT_IN_CLASS.CONS then
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast origin Cons
         local elements = origin.elements
         for i = 1, #elements, 1 do
             table.insert(newElements, elements[i])
@@ -1736,8 +1743,7 @@ local __gethash_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
-    local hashValue = hashTable:get(hashKey.name)
+    local hashValue = hashTable:get(hashKey)
     if hashValue ~= nil then
         hashValue.extras = {}
         table.insert(hashValue.extras, hashKey)
@@ -1774,12 +1780,10 @@ local __remhash_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
-    local hashValue = hashTable:get(hashKey.name)
+    local hashValue = hashTable:get(hashKey)
     if hashValue ~= nil then
         hashValue.extras = {}
-        ---@diagnostic disable-next-line: undefined-field
-        hashTable:set(hashKey.name, VALUE.Null:new({ extras = {} }))
+        hashTable:set(hashKey, VALUE.Null:new({ extras = {} }))
         local result = VALUE.True:new({ extras = {} })
         return result
     else
@@ -1788,9 +1792,85 @@ local __remhash_function = function(interpreter, params)
     end
 end
 
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __make_instance_function = function(interpreter, params)
+    if #params == 0 then
+        error(InterpreterError:new({}))
+    end
+    local class = interpreter:visit(params[1])
+    if class.classType ~= VALUE.BUILT_IN_CLASS.STANDARD_CLASS then
+        error(InterpreterError:new({}))
+    end
+    ---@cast class StandardClass
+
+    local standardInstance = StandardInstance:new({ classRef = class, fields = {} })
+    for key, value in pairs(class.instanceFields) do
+        standardInstance.fields[key] = value
+    end
+    for i = 2, #params, 2 do
+        interpreter:toggleDeclaring()
+        local arg = interpreter:visit(params[i])
+        interpreter:toggleDeclaring()
+        if i + 1 > #params then
+            error(InterpreterError:new({}))
+        end
+        local initValue = interpreter:visit(params[i + 1])
+        if class.initArgs[arg:asKey()] == nil then
+            error(InterpreterError:new({}))
+        end
+        standardInstance.fields[arg:asKey()] = initValue
+    end
+
+    return standardInstance
+end
+
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __inspect_function = function(interpreter, params)
+    -- TODO:
+    return {}
+end
+
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __slot_value_function = function(interpreter, params)
+    if #params ~= 2 then
+        error(InterpreterError:new({}))
+    end
+    local instance = interpreter:visit(params[1])
+    if instance.classType ~= VALUE.BUILT_IN_CLASS.STANDARD_INSTANCE then
+        error(InterpreterError:new({}))
+    end
+    interpreter:toggleDeclaring()
+    local fieldSymbol = interpreter:visit(params[2])
+    interpreter:toggleDeclaring()
+    if fieldSymbol.classType ~= VALUE.BUILT_IN_CLASS.SYMBOL then
+        error(InterpreterError:new({}))
+    end
+    local result = instance:get(fieldSymbol)
+    result.extras = { instance, fieldSymbol }
+    return result
+end
+
+---@deprecated
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __with_slots_function = function(interpreter, params)
+    -- TODO:
+    return {}
+end
+
 ---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
-    ["make-instance"]     = function(...) end,
+    ["make-instance"]     = __make_instance_function,
+    ["inspect"]           = __inspect_function,
+    ["slot-value"]        = __slot_value_function,
+    ["with-slots"]        = __with_slots_function,
     ["setf"]              = __setf__function,
     ["setq"]              = __setq__function,
     ["format"]            = function(...) end,

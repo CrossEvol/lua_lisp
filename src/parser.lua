@@ -127,9 +127,8 @@ end
             (COLON ACCESSOR factor)?
             (COLON READER factor)?
             (COLON WRITER factor)?
-            (COLON DOCUMENT factor)?
-            (COLON TYPE factor?
-            (COLON VISIBILITY COLON (PUBLIC | PROTECTED | PRIVATE))?
+            (COLON DOCUMENTATION  factor)?
+            (COLON ALLOCATION ( CLASS | INSTANCE ) )?
         RPAREN
 
     methodDeclaration:
@@ -458,15 +457,19 @@ function Parser:slotDeclaration()
         elseif token.type == TokenType.WRITER then
             self:consume(TokenType.WRITER)
             slot[TokenType.WRITER] = self:factor()
-        elseif token.type == TokenType.DOCUMENT then
-            self:consume(TokenType.DOCUMENT)
-            slot[TokenType.DOCUMENT] = self:factor()
-        elseif token.type == TokenType.TYPE then
-            self:consume(TokenType.TYPE)
-            slot[TokenType.TYPE] = self:factor()
-        elseif token.type == TokenType.VISIBILITY then
-            self:consume(TokenType.VISIBILITY)
-            slot[TokenType.VISIBILITY] = self:factor()
+        elseif token.type == TokenType.DOCUMENTATION then
+            self:consume(TokenType.DOCUMENTATION)
+            slot[TokenType.DOCUMENTATION] = self:factor()
+        elseif token.type == TokenType.ALLOCATION then
+            self:consume(TokenType.ALLOCATION)
+            local allocation = self:factor()
+            ---@diagnostic disable-next-line: undefined-field
+            local symbolName = allocation.value.name
+            local allocationTypes = { class = "class", instance = "instance" }
+            if (allocationTypes[string.lower(symbolName)]) == nil then
+                error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
+            end
+            slot[TokenType.ALLOCATION] = allocation
         else
             error(ParserError:new({ lineNo = self:currentToken().lineNo, columnNo = self:currentToken().columnNo }))
         end
@@ -486,8 +489,13 @@ function Parser:methodDeclaration()
     self:consume(TokenType.LPAREN)
     local params = {}
     while self:currentToken().type ~= TokenType.RPAREN do
-        local typedParam = self:typedParam()
-        table.insert(params, typedParam)
+        if self:currentToken().type == TokenType.LPAREN then
+            local typedParam = self:typedParam()
+            table.insert(params, typedParam)
+        else
+            local param = self:variable()
+            table.insert(params, param)
+        end
     end
     self:consume(TokenType.RPAREN)
 
@@ -772,8 +780,8 @@ end
 function Parser:quoteSymbol()
     self:consume(TokenType.SINGLE_QUOTE)
     local typeName = self:variable()
+    ---@cast typeName Variable
     if typeName.value.classType == VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
-        ---@diagnostic disable-next-line: undefined-field
         typeName.value = VALUE.Symbol:new({ name = typeName.value.name })
     end
     return typeName

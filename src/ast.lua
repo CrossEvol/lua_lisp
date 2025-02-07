@@ -273,6 +273,7 @@ function NilConstant.__eq(obj1, obj2)
 end
 
 ---@class Variable : Expr
+---@field value Symbol
 Variable = Expr:new({ astType = AST_TYPE.VARIABLE })
 
 ---@param obj1 Variable
@@ -429,27 +430,25 @@ end
 
 ---@class SlotDeclaration : Declaration
 ---@field value nil
----@field name Expr
----@field initform Expr
----@field initarg Expr
----@field accessor Expr
----@field reader Expr
----@field writer Expr
----@field document Expr
----@field type Expr
----@field visibility Expr
+---@field name Expr | nil
+---@field initform Expr | nil
+---@field initarg Expr | nil
+---@field accessor Expr | nil
+---@field reader Expr | nil
+---@field writer Expr | nil
+---@field documentation Expr | nil
+---@field allocation Expr | nil
 SlotDeclaration = Declaration:new({
-    astType    = AST_TYPE.FUNC_DECLARATION,
-    value      = nil,
-    name       = Expr:new({}),
-    initform   = Expr:new({}),
-    initarg    = Expr:new({}),
-    accessor   = Expr:new({}),
-    reader     = Expr:new({}),
-    writer     = Expr:new({}),
-    document   = Expr:new({}),
-    type       = Expr:new({}),
-    visibility = Expr:new({}),
+    astType       = AST_TYPE.FUNC_DECLARATION,
+    value         = nil,
+    name          = nil,
+    initform      = nil,
+    initarg       = nil,
+    accessor      = nil,
+    reader        = nil,
+    writer        = nil,
+    documentation = nil,
+    allocation    = nil,
 })
 
 ---@param obj1 SlotDeclaration
@@ -479,13 +478,10 @@ function SlotDeclaration.__eq(obj1, obj2)
     if obj1.writer ~= obj2.writer then
         return false
     end
-    if obj1.document ~= obj2.document then
+    if obj1.documentation ~= obj2.documentation then
         return false
     end
-    if obj1.type ~= obj2.type then
-        return false
-    end
-    if obj1.visibility ~= obj2.visibility then
+    if obj1.allocation ~= obj2.allocation then
         return false
     end
     return true
@@ -494,13 +490,13 @@ end
 ---@class ClassDeclaration : Declaration
 ---@field value nil
 ---@field name Variable
----@field superClasses table<Variable, integer>
----@field slots table<SlotDeclaration, integer>
+---@field superClasses table<integer, Variable>
+---@field slots table<integer, SlotDeclaration>
 ClassDeclaration = Declaration:new({
     astType = AST_TYPE.CLASS_DECLARATION,
     value = nil,
     name = Variable:new({}),
-    superClasses = Variable:new({}),
+    superClasses = {},
     slots = {},
 })
 
@@ -566,7 +562,7 @@ end
 ---@class MethodDeclaration : Declaration
 ---@field value nil
 ---@field name Variable
----@field params table<TypedParam, integer>
+---@field params table<TypedParam | Variable, integer>
 ---@field expressions table<Expr, integer>
 MethodDeclaration = Declaration:new({
     astType = AST_TYPE.METHOD_DECLARATION,

@@ -56,10 +56,8 @@ local SlotKeywords = {
     ACCESSOR = "accessor",
     READER = "reader",
     WRITER = "writer",
-    DOCUMENT = "document",
-    TYPE = "type",
-    VISIBILITY = "visibility",
     DOCUMENTATION = "documentation",
+    ALLOCATION = "allocation",
 }
 
 ---@alias SlotKeywords.Type
@@ -68,10 +66,8 @@ local SlotKeywords = {
 ---| '"accessor"'
 ---| '"reader"'
 ---| '"writer"'
----| '"document"'
----| '"type"'
----| '"visibility"'
 ---| '"documentation"'
+---| '"allocation"'
 
 ---@class TokenType
 local TokenType = {
@@ -133,10 +129,8 @@ local TokenType = {
     ACCESSOR = "accessor",
     READER = "reader",
     WRITER = "writer",
-    DOCUMENT = "document",
-    TYPE = "type",
-    VISIBILITY = "visibility",
     DOCUMENTATION = "documentation",
+    ALLOCATION = "allocation",
 }
 
 ---@alias TokenType.Type
@@ -191,10 +185,9 @@ local TokenType = {
 ---| '"accessor"'
 ---| '"reader"'
 ---| '"writer"'
----| '"document"'
----| '"type"'
 ---| '"visibility"'
 ---| '"documentation"'
+---| '"allocation"'
 
 
 return {

@@ -59,9 +59,8 @@
             (COLON ACCESSOR factor)?
             (COLON READER factor)?
             (COLON WRITER factor)?
-            (COLON DOCUMENT factor)?
-            (COLON TYPE factor?
-            (COLON VISIBILITY COLON (PUBLIC | PROTECTED | PRIVATE))?
+            (COLON DOCUMENTATION  factor)?
+            (COLON ALLOCATION factor)?
         RPAREN
 
     methodDeclaration:
@@ -120,7 +119,7 @@
         LPAREN lambdaDeclaration (expr)* RPAREN
 
     factor :
-        number | character | string | T | NIL | quoteList | quoteType |sharpList |  variable
+        number | character | string | T | NIL | quoteList | quoteSymbol |sharpList |  variable
 
     sharpVector :
         SHARP params
@@ -128,7 +127,7 @@
     quoteList :
         SINGLE_QUOTE params
 
-    quoteType :
+    quoteSymbol :
         SINGLE_QUOTE ID
 
     variable:
@@ -147,9 +146,11 @@ local AST = require("src.ast")
 local VALUE = require("src.builtin_class")
 
 local text = [[
-(map 'string (lambda (it) (code-char it)) #(97 98 99))
+    (defclass person ()((age :initarg :age :accessor age)))
+    (defmethod grow ((p person) a b)(+ (age p) a b))
+    (defvar p1 (make-instance 'person :age 10))
+    (grow p1 1 2)
 ]]
-
 
 local lexer = Lexer:new({ text = text })
 local parser = Parser:new({ lexer = lexer })
@@ -158,9 +159,51 @@ local ast = parser:parse()
 local results = interpreter:interpret(ast)
 print(results)
 local expects = {
-    VALUE.SimpleBaseString:new({
-        stringValue = "abc"
-    })
+    VALUE.StandardClass:new({
+        name = VALUE.Symbol:new({ name = "person" }),
+        initArgs = {
+            [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+        },
+        superClassRefs = {},
+        staticFields = {},
+        instanceFields = {
+            [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+        },
+        methods = {
+            [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Method:new({
+                isAccessorMethod = true,
+                func = VALUE.BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                target = VALUE.Symbol:new({ name = "age" }),
+            }),
+        },
+    }),
+    VALUE.Method:new({
+        name = VALUE.Symbol:new({ name = "grow" }),
+        isAccessorMethod = false,
+        params = {
+            AST.TypedParam:new({
+                name  = AST.Variable:new({ value = VALUE.Symbol:new({ name = "p" }) }),
+                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+            }),
+            AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+        },
+        expressions = {
+            AST.FunctionCall:new({
+                value = VALUE.BuiltinFunction:new({ name = "+", func = NativeMethod:find("+") }),
+                params = {
+                    AST.FunctionCall:new({
+                        params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "p" }) }) },
+                        value  = VALUE.Symbol:new({ name = "age" }),
+                    }),
+                    AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                    AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                },
+            })
+        },
+    }),
+    VALUE.Symbol:new({ name = "p1" }),
+    VALUE.FixNum:new({ intValue = 13 })
 }
 local flag    = true
 for i = 1, #results do

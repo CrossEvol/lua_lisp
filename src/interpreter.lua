@@ -1,10 +1,8 @@
 local InterpreterError = require("src.exception").InterpreterError
 local AST = require("src.ast")
-local Token = require("src.token").Token
-local TokenType = require("src.token_type").TokenType
 local VALUE = require("src.builtin_class")
-local Parser = require("src.parser").Parser
 local Util = require("src.util")
+local NativeMethod = require("src.builtin_function").NativeMethod
 
 ---@class LocalVars
 ---@field entries table<string, T>
@@ -51,18 +49,78 @@ function LocalVars:remove(key)
     self.entries[key:asKey()] = nil
 end
 
+---@class MethodStack
+---@field entries table<Symbol, table<StandardClass, integer>>
+MethodStack = {
+    entries = {},
+}
+
+---@param o table
+---@return MethodStack
+function MethodStack:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+---@param methodSymbol T
+---@param classRef StandardClass
+---@return nil
+function MethodStack:add(methodSymbol, classRef)
+    if self.entries[methodSymbol:asKey()] == nil then
+        self.entries[methodSymbol:asKey()] = {}
+    end
+    self.entries[methodSymbol:asKey()][classRef] = true
+end
+
+---@param methodSymbol T
+---@return boolean
+function MethodStack:exists(methodSymbol)
+    local methodSet = self.entries[methodSymbol:asKey()]
+    if methodSet == nil then
+        return false
+    end
+    if #methodSet == 0 then
+        return false
+    end
+    return true
+end
+
+---@param methodSymbol T
+---@param classRef StandardClass
+---@return T
+function MethodStack:get(methodSymbol, classRef)
+    local method = classRef:getMethod(methodSymbol)
+    if method == nil then
+        error(InterpreterError:new({}))
+    else
+        return method
+    end
+end
+
 ---@class Interpreter
 ---@field globals table<string , any>
 ---@field localVars LocalVars
+---@field methodStack MethodStack
 ---@field isDeclaring boolean
 Interpreter = {
     globals = {},
     localVars = LocalVars:new({}),
+    methodStack = MethodStack:new({}),
     isDeclaring = false,
 }
 
 function Interpreter:toggleDeclaring()
     self.isDeclaring = not self.isDeclaring
+end
+
+function Interpreter:startDeclaring()
+    self.isDeclaring = true
+end
+
+function Interpreter:endDeclaring()
+    self.isDeclaring = false
 end
 
 ---@return nil
@@ -262,27 +320,196 @@ function Interpreter:visitFuncDeclaration(declaration)
 end
 
 ---@param declaration SlotDeclaration
----@return T
+---@return SlotValue
 function Interpreter:visitSlotDeclaration(declaration)
-    return {}
+    local slotValue = VALUE.SlotValue:new({
+        name = Null:new({}),
+        accessor = Null:new({}),
+        accessorSymbol = Null:new({}),
+        reader = Null:new({}),
+        readerSymbol = Null:new({}),
+        writer = Null:new({}),
+        writerSymbol = Null:new({}),
+        allocation = Null:new({}),
+        initarg = Null:new({}),
+        initform = Null:new({}),
+    })
+    self:toggleDeclaring()
+    local slotName = self:visit(declaration.name)
+    self:toggleDeclaring()
+    slotValue["name"] = slotName
+    if declaration.allocation ~= nil then
+        self:toggleDeclaring()
+        local allocation = self:visit(declaration.allocation)
+        self:toggleDeclaring()
+        ---@cast allocation Symbol
+        if string.lower(allocation.name) ~= "class" and string.lower(allocation.name) ~= "instance" then
+            error(InterpreterError:new({}))
+        end
+        slotValue["allocation"] = allocation
+    else
+        slotValue["allocation"] = VALUE.Symbol:new({ name = "instance" })
+    end
+
+    if declaration.initarg ~= nil then
+        self:toggleDeclaring()
+        local initarg = self:visit(declaration.initarg)
+        self:toggleDeclaring()
+        slotValue["initarg"] = initarg
+    end
+    if declaration.initform ~= nil then
+        local initform = self:visit(declaration.initform)
+        slotValue["initform"] = initform
+    end
+    if declaration.reader ~= nil then
+        self:toggleDeclaring()
+        local readerSymbol = self:visit(declaration.reader)
+        self:toggleDeclaring()
+        local reader = Method:new({
+            isAccessorMethod = true,
+            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+            target = slotName,
+        })
+        slotValue["readerSymbol"] = readerSymbol
+        slotValue["reader"] = reader
+    end
+    if declaration.writer ~= nil then
+        self:toggleDeclaring()
+        local writerSymbol = self:visit(declaration.writer)
+        self:toggleDeclaring()
+        local writer = Method:new({
+            isAccessorMethod = true,
+            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+            target = slotName,
+        })
+        slotValue["writerSymbol"] = writerSymbol
+        slotValue["writer"] = writer
+    end
+    if declaration.accessor ~= nil then
+        self:toggleDeclaring()
+        local accessorSymbol = self:visit(declaration.accessor)
+        self:toggleDeclaring()
+        local accessor = Method:new({
+            isAccessorMethod = true,
+            func = BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+            target = slotName,
+        })
+        slotValue["accessorSymbol"] = accessorSymbol
+        slotValue["accessor"] = accessor
+    end
+    return slotValue
 end
 
 ---@param declaration ClassDeclaration
----@return T
+---@return StandardClass
 function Interpreter:visitClassDeclaration(declaration)
-    return {}
+    local standardClass = VALUE.StandardClass:new({
+        name = Null:new({}),
+        superClassRefs = {},
+        initArgs = {},
+        staticFields = {},
+        instanceFields = {},
+        methods = {},
+    })
+    for _, value in ipairs(declaration.superClasses) do
+        local superClass = self:visit(value)
+        if superClass == nil then
+            error(InterpreterError:new({}))
+        end
+        ---@cast superClass StandardClass
+        ---should inherit initArgs / instanceFields / methods from superClasses , and will be overload later if duplicate
+        for k, v in pairs(superClass.initArgs) do
+            standardClass.initArgs[k] = v
+        end
+        for k, v in pairs(superClass.instanceFields) do
+            standardClass.instanceFields[k] = v
+        end
+        for k, v in pairs(superClass.methods) do
+            standardClass.methods[k] = v
+        end
+        table.insert(standardClass.superClassRefs, superClass)
+    end
+
+    local methodNameSet = {}
+    for _, value in ipairs(declaration.slots) do
+        local slotValue = self:visitSlotDeclaration(value)
+        ---@cast slotValue SlotValue
+        local isStaticField = string.lower(slotValue.allocation.name) == "class"
+        if isStaticField then
+            standardClass.staticFields[slotValue.name:asKey()] =
+                slotValue.initform ~= VALUE.BUILT_IN_CLASS.NULL
+                and slotValue.initform
+                or VALUE.Null:new({})
+        else
+            standardClass.instanceFields[slotValue.name:asKey()] =
+                slotValue.initform ~= VALUE.BUILT_IN_CLASS.NULL
+                and slotValue.initform
+                or VALUE.Null:new({})
+        end
+        if slotValue.initarg.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+            standardClass.initArgs[slotValue.initarg:asKey()] = slotValue.initform
+        end
+        if slotValue.accessorSymbol.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+            if methodNameSet[slotValue.accessorSymbol] ~= nil then
+                error(InterpreterError:new({}))
+            end
+            methodNameSet[slotValue.accessorSymbol] = true
+            standardClass:setMethod(slotValue.accessorSymbol, slotValue.accessor)
+            self.methodStack:add(slotValue.accessorSymbol, standardClass)
+        end
+        if slotValue.readerSymbol.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+            if methodNameSet[slotValue.readerSymbol] ~= nil then
+                error(InterpreterError:new({}))
+            end
+            methodNameSet[slotValue.readerSymbol] = true
+            standardClass:setMethod(slotValue.readerSymbol, slotValue.reader)
+            self.methodStack:add(slotValue.readerSymbol, standardClass)
+        end
+        if slotValue.writerSymbol.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+            if methodNameSet[slotValue.writerSymbol] ~= nil then
+                error(InterpreterError:new({}))
+            end
+            methodNameSet[slotValue.writerSymbol] = true
+            standardClass:setMethod(slotValue.writerSymbol, slotValue.writer)
+            self.methodStack:add(slotValue.writerSymbol, standardClass)
+        end
+    end
+
+    self:toggleDeclaring()
+    local className = self:visit(declaration.name)
+    ---@cast className Symbol
+    standardClass.name = className
+    self:toggleDeclaring()
+    self:add(className, standardClass)
+    return standardClass
 end
 
 ---@param typedParam TypedParam
 ---@return T
 function Interpreter:visitTypedParam(typedParam)
-    return {}
+    self:startDeclaring()
+    local varName = self:visit(typedParam.name)
+    self:endDeclaring()
+    local instance = self:visit(typedParam.value)
+    self:startDeclaring()
+    varName.extras = { instance }
+    return varName
 end
 
 ---@param declaration MethodDeclaration
----@return T
+---@return Method
 function Interpreter:visitMethodDeclaration(declaration)
-    return {}
+    self:toggleDeclaring()
+    local methodName = self:visit(declaration.name)
+    self:toggleDeclaring()
+    local method = VALUE.Method:new({
+        name = methodName,
+        isAccessorMethod = false,
+        params = declaration.params,
+        expressions = declaration.expressions,
+    })
+    self:add(methodName, method)
+    return method
 end
 
 ---@param declaration GenericDeclaration
@@ -292,12 +519,13 @@ function Interpreter:visitGenericDeclaration(declaration)
 end
 
 ---@param declaration LambdaDeclaration
----@return T
+---@return LambdaFunction
 function Interpreter:visitLambdaDeclaration(declaration)
     local lambdaDecl = VALUE.LambdaFunction:new({
         params = declaration.params,
         expressions = declaration.expressions,
     })
+    ---@cast lambdaDecl LambdaFunction
     return lambdaDecl
 end
 
@@ -315,35 +543,92 @@ function Interpreter:visitFunctionCall(funcCall)
         -- see lexer.lua `function Lexer:identifier()` :344
         local funcName = funcCall.value
         local func = self:get(funcName)
-        ---@diagnostic disable-next-line: undefined-field
-        local formalParams, expressions = func.params, func.expressions
-        local actualParams = funcCall.params
-        if #formalParams ~= #actualParams then
-            error(InterpreterError:new({}))
+        if func ~= nil then
+            if func.classType == VALUE.BUILT_IN_CLASS.USER_DEFINED_FUNCTION then
+                ---@cast func UserDefinedFunction
+                local formalParams, expressions = func.params, func.expressions
+                local actualParams = funcCall.params
+                if #formalParams ~= #actualParams then
+                    error(InterpreterError:new({}))
+                end
+                self:enterScope()
+                for i = 1, #formalParams, 1 do
+                    self:toggleDeclaring()
+                    local varName = self:visitVariable(formalParams[i].name)
+                    self:toggleDeclaring()
+                    local varValue = self:visitExpr(actualParams[i])
+                    self.localVars:add(varName, varValue)
+                end
+                local result = VALUE.Null:new({})
+                for i = 1, #expressions, 1 do
+                    result = self:interpret(expressions[i])
+                end
+                self:leaveScope()
+                return result
+            elseif func.classType == VALUE.BUILT_IN_CLASS.METHOD then
+                ---@cast func Method
+                local formalParams, expressions = func.params, func.expressions
+                local actualParams = funcCall.params
+                if #formalParams ~= #actualParams then
+                    error(InterpreterError:new({}))
+                end
+                self:enterScope()
+                for i = 1, #formalParams, 1 do
+                    local param = formalParams[i]
+                    self:toggleDeclaring()
+                    local varName = self:visit(param)
+                    self:toggleDeclaring()
+                    local varValue = self:visit(actualParams[i])
+                    if param.astType == AST.AST_TYPE.TYPED_PARAM then
+                        local classRef = varName.extras[1]
+                        ---@cast varValue StandardInstance
+                        if classRef ~= varValue.classRef then
+                            error(InterpreterError:new({}))
+                        end
+                        varName.extras = {}
+                    end
+                    self.localVars:add(varName, varValue)
+                end
+                local result = VALUE.Null:new({})
+                for i = 1, #expressions, 1 do
+                    result = self:interpret(expressions[i])
+                end
+                self:leaveScope()
+                return result
+            else
+                error(InterpreterError:new({}))
+            end
+        else
+            local instance = self:visit(funcCall.params[1])
+            ---@cast instance StandardInstance
+            local classRef = instance.classRef
+            local method = self.methodStack:get(funcName, classRef)
+            if method == nil then
+                error(InterpreterError:new({}))
+            else
+                ---@cast method Method
+                local isAccessorMethod = method.isAccessorMethod
+                if isAccessorMethod then
+                    local params = {
+                        AST.Variable:new({ value = funcCall.params[1].value }),
+                        AST.Variable:new({ value = method.target }) }
+                    local result = method.func.func(self, params)
+                    result.extras = { instance, method.target }
+                    return result
+                else
+                    error(InterpreterError:new({}))
+                end
+            end
         end
-        self:enterScope()
-        for i = 1, #formalParams, 1 do
-            self:toggleDeclaring()
-            local varName = self:visitVariable(formalParams[i].name)
-            self:toggleDeclaring()
-            local varValue = self:visitExpr(actualParams[i])
-            self.localVars:add(varName, varValue)
-        end
-        local result = VALUE.Null:new({})
-        for i = 1, #expressions, 1 do
-            result = self:interpret(expressions[i])
-        end
-        self:leaveScope()
-        return result
+    else
+        error(InterpreterError:new({}))
     end
-    error(InterpreterError:new({}))
 end
 
 ---@param lambdaCall LambdaCall
 ---@return T
 function Interpreter:visitLambdaCall(lambdaCall)
     local lambdaDecl = self:visitLambdaDeclaration(lambdaCall.value)
-    ---@diagnostic disable-next-line: undefined-field
     local formalParams, expressions = lambdaDecl.params, lambdaDecl.expressions
     local actualParams = lambdaCall.params
     if #formalParams ~= #actualParams then
@@ -377,7 +662,7 @@ function Interpreter:visitDoTimesCall(doTimesCall)
     if times.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast times FixNum
     local intValue = times.intValue
 
     if intValue <= 0 then
@@ -411,7 +696,7 @@ function Interpreter:visitDoListCall(doListCall)
 
 
     local result = VALUE.Null:new({})
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
     if list.classType == VALUE.BUILT_IN_CLASS.NULL then
         do end
@@ -444,7 +729,7 @@ function Interpreter:visitLoopCall(loopCall)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     local result = VALUE.Null:new({})
@@ -480,7 +765,7 @@ function Interpreter:visitMapCall(mapCall)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if list.classType == VALUE.BUILT_IN_CLASS.NULL then
@@ -496,7 +781,7 @@ function Interpreter:visitMapCall(mapCall)
         self:toggleDeclaring()
         local returnType = self:visit(mapCall.returnType)
         self:toggleDeclaring()
-        ---@diagnostic disable-next-line: undefined-field
+        ---@cast returnType Symbol
         local returnTypeName = returnType.name
         if returnTypeName == "list" then
             return VALUE.Cons:new({ elements = newElements })
@@ -528,7 +813,7 @@ function Interpreter:visitMapcarCall(mapcarCall)
         error(InterpreterError:new({}))
     end
 
-    ---@diagnostic disable-next-line: undefined-field
+    ---@cast list List
     local elements = list.elements
 
     if list.classType == VALUE.BUILT_IN_CLASS.NULL then

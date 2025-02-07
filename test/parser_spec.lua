@@ -418,9 +418,8 @@ describe("Parser tests", function()
                         :reader getName
                         :writer setName
                         :initform T
-                        :document "person"
-                        :type integer
-                        :visibility public
+                        :documentation "person"
+                        :allocation :class
                         )
                     (lisper
                         :initform nil
@@ -440,14 +439,13 @@ describe("Parser tests", function()
                                 accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
                                 reader = AST.Variable:new({ value = VALUE.Symbol:new({ name = "getName" }) }),
                                 writer = AST.Variable:new({ value = VALUE.Symbol:new({ name = "setName" }) }),
-                                document = AST.StringConstant:new({
+                                documentation = AST.StringConstant:new({
                                     value = VALUE.SimpleBaseString:new({
                                         stringValue =
                                         "person"
                                     })
                                 }),
-                                type = AST.Variable:new({ value = VALUE.Symbol:new({ name = "integer" }) }),
-                                visibility = AST.Variable:new({ value = VALUE.Symbol:new({ name = "public" }) }),
+                                allocation = AST.Variable:new({ value = VALUE.Symbol:new({ name = "class" }) }),
                             }),
                             AST.SlotDeclaration:new({
                                 name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
@@ -544,6 +542,63 @@ describe("Parser tests", function()
                                 value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
                                 params = {
                                     AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                                },
+                            }),
+                        },
+                    })
+                )
+                TEST_AST(
+                    [[
+                    (defmethod speak ((a animal) b c)
+                        ()
+                        (+ a b c)
+                    )
+                    ]],
+                    AST.MethodDeclaration:new({
+                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        params      = {
+                            AST.TypedParam:new({
+                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "animal" }) }),
+                            }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "c" }) }),
+                        },
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+                                params = {
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'c' }) }),
+                                },
+                            }),
+                        },
+                    })
+                )
+                TEST_AST(
+                    [[
+                    (defmethod speak (a b c)
+                        ()
+                        (+ a b c)
+                    )
+                    ]],
+                    AST.MethodDeclaration:new({
+                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        params      = {
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "c" }) }),
+                        },
+                        expressions = {
+                            AST.Empty:new({}),
+                            AST.FunctionCall:new({
+                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+                                params = {
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'c' }) }),
                                 },
                             }),
                         },
