@@ -1258,6 +1258,76 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.Null:new({})
             )
         end)
+        it("maphash", function()
+            TEST_INTERPRETER_ERROR([[
+                    (defparameter m (make-hash-table))
+                    (setf (gethash 'a m) 1)
+                    (setf (gethash 'b m) 2)
+                    (defvar sum 0)
+                    (defvar NotHash '(1))
+
+                    (maphash (lambda (key val)
+                            (setf sum (+ sum val)))
+                            NotHash)
+                    sum
+                ]]
+            )
+            TEST_INTERPRETER_ERROR([[
+                    (defparameter m (make-hash-table))
+                    (setf (gethash 'a m) 1)
+                    (setf (gethash 'b m) 2)
+                    (defvar sum 0)
+                    (defun NotLambda (key val) (setf sum (+ sum val)))
+
+                    (maphash NotLambda m)
+                    sum
+                ]]
+            )
+            TEST_INTERPRETER([[
+                    (maphash (lambda (k v)())
+                        (make-hash-table)
+                    )
+                ]],
+                BuiltinClassModule.Null:new({})
+            )
+            TEST_INTERPRETER([[
+                    (defparameter m (make-hash-table))
+                    (setf (gethash 'a m) 1)
+                    (setf (gethash 'b m) 2)
+                    (defvar sum 0)
+
+                    (maphash (lambda (key val)
+                            (setf sum (+ sum val)))
+                            m)
+                    sum
+                ]],
+                BuiltinClassModule.Symbol:new({ name = "m" }),
+                BuiltinClassModule.FixNum:new({ intValue = 1 }),
+                BuiltinClassModule.FixNum:new({ intValue = 2 }),
+                BuiltinClassModule.Symbol:new({ name = "sum" }),
+                BuiltinClassModule.Null:new({}),
+                BuiltinClassModule.FixNum:new({ intValue = 3 })
+            )
+            TEST_INTERPRETER([[
+                    (defparameter m (make-hash-table))
+                    (setf (gethash 'a m) 1)
+                    (setf (gethash 'b m) 2)
+                    (defvar sum 0)
+                    (defvar l1 (lambda (key val)
+                             (setf sum (+ sum val))))
+
+                    (maphash l1 m)
+                    sum
+                ]],
+                BuiltinClassModule.Symbol:new({ name = "m" }),
+                BuiltinClassModule.FixNum:new({ intValue = 1 }),
+                BuiltinClassModule.FixNum:new({ intValue = 2 }),
+                BuiltinClassModule.Symbol:new({ name = "sum" }),
+                BuiltinClassModule.Symbol:new({ name = "l1" }),
+                BuiltinClassModule.Null:new({}),
+                BuiltinClassModule.FixNum:new({ intValue = 3 })
+            )
+        end)
         it("funcall", function()
             TEST_INTERPRETER_ERROR([[(funcall)]])
             TEST_INTERPRETER_ERROR([[(funcall 'print)]])

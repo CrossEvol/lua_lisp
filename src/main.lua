@@ -146,8 +146,15 @@ local AST = require("src.ast")
 local BuiltinClassModule = require("src.builtin_class")
 
 local text = [[
-                (defun add (a b)(+ a b))
-                (apply 'add '(1 2))
+                    (defparameter m (make-hash-table))
+                    (setf (gethash 'a m) 1)
+                    (setf (gethash 'b m) 2)
+                    (defvar sum 0)
+                    (defvar l1 (lambda (key val)
+                             (setf sum (+ sum val))))
+
+                    (maphash l1 m)
+                    sum
 ]]
 
 local lexer = Lexer:new({ text = text })
@@ -157,55 +164,13 @@ local ast = parser:parse()
 local results = interpreter:interpret(ast)
 print(results)
 local expects = {
-    BuiltinClassModule.StandardClass:new({
-        name = BuiltinClassModule.Symbol:new({ name = "person" }),
-        initArgs = {
-            [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
-        },
-        superClassRefs = {},
-        staticFields = {},
-        instanceFields = {
-            [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
-        },
-        methods = {
-            [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Method:new({
-                isAccessorMethod = true,
-                func = BuiltinClassModule.BuiltinFunction:new({
-                    name = "slot-value",
-                    func = NativeMethod:find(
-                        "slot-value")
-                }),
-                target = BuiltinClassModule.Symbol:new({ name = "age" }),
-            }),
-        },
-    }),
-    BuiltinClassModule.Method:new({
-        name = BuiltinClassModule.Symbol:new({ name = "grow" }),
-        isAccessorMethod = false,
-        params = {
-            AST.TypedParam:new({
-                name  = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "p" }) }),
-                value = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "person" }) }),
-            }),
-            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
-            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
-        },
-        expressions = {
-            AST.FunctionCall:new({
-                value = BuiltinClassModule.BuiltinFunction:new({ name = "+", func = NativeMethod:find("+") }),
-                params = {
-                    AST.FunctionCall:new({
-                        params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "p" }) }) },
-                        value  = BuiltinClassModule.Symbol:new({ name = "age" }),
-                    }),
-                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
-                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
-                },
-            })
-        },
-    }),
-    BuiltinClassModule.Symbol:new({ name = "p1" }),
-    BuiltinClassModule.FixNum:new({ intValue = 13 })
+    BuiltinClassModule.Symbol:new({ name = "m" }),
+    BuiltinClassModule.FixNum:new({ intValue = 1 }),
+    BuiltinClassModule.FixNum:new({ intValue = 2 }),
+    BuiltinClassModule.Symbol:new({ name = "sum" }),
+    BuiltinClassModule.Symbol:new({ name = "l1" }),
+    BuiltinClassModule.Null:new({}),
+    BuiltinClassModule.FixNum:new({ intValue = 3 })
 }
 local flag    = true
 for i = 1, #results do

@@ -1966,6 +1966,44 @@ local __apply_function = function(interpreter, params)
     end
 end
 
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __maphash_function = function(interpreter, params)
+    if #params ~= 2 then
+        error(InterpreterError:new({}))
+    end
+
+    local lambdaDecl = nil
+    if params[1].astType == AST.AST_TYPE.LAMBDA_DECLARATION then
+        lambdaDecl = params[1]
+    elseif params[1].astType == AST.AST_TYPE.VARIABLE then
+        local lambdaFunc = interpreter:visit(params[1])
+        if lambdaFunc.classType ~= BuiltinClassModule.BUILT_IN_CLASS.LAMBDA_FUNCTION then
+            error(InterpreterError:new({}))
+        end
+        ---@cast lambdaFunc LambdaFunction
+        lambdaDecl = AST.LambdaDeclaration:new({
+            params = lambdaFunc.params,
+            expressions = lambdaFunc.expressions,
+        })
+    end
+    ---@cast lambdaDecl LambdaDeclaration
+
+    local hashSymbol = params[2]
+    local hashTable = interpreter:visit(hashSymbol)
+    if hashTable.classType ~= BuiltinClassModule.BUILT_IN_CLASS.HASH_TABLE then
+        error(InterpreterError:new({}))
+    end
+    ---@cast hashTable HashTable
+
+    for key, value in pairs(hashTable.entries) do
+        local lambdaCall = LambdaCall:new({ value = lambdaDecl, params = { key, value }, primitive = false })
+        interpreter:visit(lambdaCall)
+    end
+    return BuiltinClassModule.Null:new({})
+end
+
 ---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
     ["make-instance"]     = __make_instance_function,
@@ -2005,7 +2043,7 @@ local BUILT_IN_FUNCTION = {
     ["make-hash-table"]   = __make_hash_table__function,
     ["gethash"]           = __gethash_function,
     ["remhash"]           = __remhash_function,
-    ["maphash"]           = function(...) end,
+    ["maphash"]           = __maphash_function,
     ["append"]            = __append__function,
     ["car"]               = __car_function, ---@deprecated
     ["cdr"]               = __cdr_function, ---@deprecated
