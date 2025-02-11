@@ -1,4 +1,4 @@
-local Null = require("src.builtin_class").Null
+local BuiltinClassModule = require("src.builtin_class")
 local TokenType = require("src.token_type").TokenType
 
 ---@class Token
@@ -8,7 +8,7 @@ local TokenType = require("src.token_type").TokenType
 ---@field columnNo integer
 Token = {
     type = TokenType.EMPTY,
-    value = Null:new({}),
+    value = BuiltinClassModule.Null:new({}),
     lineNo = 0,
     columnNo = 0,
 }

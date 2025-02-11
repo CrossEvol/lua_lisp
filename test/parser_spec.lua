@@ -1,7 +1,7 @@
 local Lexer = require("src.lexer").Lexer
 local Parser = require("src.parser").Parser
 local AST = require("src.ast")
-local VALUE = require("src.builtin_class")
+local BuiltinClassModule = require("src.builtin_class")
 
 describe("Parser tests", function()
     local TEST_AST = function(text, expect)
@@ -22,51 +22,52 @@ describe("Parser tests", function()
     end)
 
     it("SingleQuote AST", function()
-        TEST_AST([['vector]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'vector' }) }))
+        TEST_AST([['vector]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'vector' }) }))
         TEST_AST([['()]], AST.FunctionCall:new({
-            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
             params = {}
         }))
         TEST_AST([['(1 a b)]], AST.FunctionCall:new({
-            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
             params = {
-                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
+                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
             }
         }))
     end)
 
     it("SimpleVector AST", function()
         TEST_AST([[#()]], AST.FunctionCall:new({
-            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
+            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
             params = {}
         }))
         TEST_AST([[#(1 a b)]], AST.FunctionCall:new({
-            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
+            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
             params = {
-                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
+                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
             }
         }))
     end)
 
     it("Constant AST", function()
-        TEST_AST([[1]], AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }))
-        TEST_AST([[1.0]], AST.FloatConstant:new({ value = VALUE.SingleFloat:new({ floatValue = 1.0 }) }))
+        TEST_AST([[1]], AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }))
+        TEST_AST([[1.0]], AST.FloatConstant:new({ value = BuiltinClassModule.SingleFloat:new({ floatValue = 1.0 }) }))
         TEST_AST([[1/2]],
-            AST.RationalConstant:new({ value = VALUE.Rational:new({ numerator = 1, denominator = 2 }) }))
-        TEST_AST([[#\A]], AST.CharacterConstant:new({ value = VALUE.Character:new({ chars = [[#\A]] }) }))
-        TEST_AST([["1"]], AST.StringConstant:new({ value = VALUE.SimpleBaseString:new({ stringValue = "1" }) }))
+            AST.RationalConstant:new({ value = BuiltinClassModule.Rational:new({ numerator = 1, denominator = 2 }) }))
+        TEST_AST([[#\A]], AST.CharacterConstant:new({ value = BuiltinClassModule.Character:new({ chars = [[#\A]] }) }))
+        TEST_AST([["1"]],
+            AST.StringConstant:new({ value = BuiltinClassModule.SimpleBaseString:new({ stringValue = "1" }) }))
         TEST_AST([[T]], AST.TrueConstant:new({}))
         TEST_AST([[NIL]], AST.NilConstant:new({}))
     end)
 
     it("Variable AST", function()
-        TEST_AST([[a]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }))
-        TEST_AST([[a1]], AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a1' }) }))
-        TEST_AST([[__a__]], AST.Variable:new({ value = VALUE.Symbol:new({ name = '__a__' }) }))
+        TEST_AST([[a]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }))
+        TEST_AST([[a1]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a1' }) }))
+        TEST_AST([[__a__]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = '__a__' }) }))
     end)
 
     context("UserDefined FunctionCall AST", function()
@@ -74,7 +75,7 @@ describe("Parser tests", function()
             TEST_AST(
                 "(custom-func)",
                 AST.FunctionCall:new({
-                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    value = BuiltinClassModule.Symbol:new({ name = "custom-func" }),
                     params = {}
                 }))
         end)
@@ -83,8 +84,8 @@ describe("Parser tests", function()
             TEST_AST(
                 "(custom-func a)",
                 AST.FunctionCall:new({
-                    value = VALUE.Symbol:new({ name = "custom-func" }),
-                    params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
+                    value = BuiltinClassModule.Symbol:new({ name = "custom-func" }),
+                    params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }) }
                 }))
         end)
 
@@ -92,10 +93,10 @@ describe("Parser tests", function()
             TEST_AST(
                 "(custom-func a 1)",
                 AST.FunctionCall:new({
-                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    value = BuiltinClassModule.Symbol:new({ name = "custom-func" }),
                     params = {
-                        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                        AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                        AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                        AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                     },
                 }))
         end)
@@ -104,11 +105,11 @@ describe("Parser tests", function()
             TEST_AST(
                 "(custom-func a b 1)",
                 AST.FunctionCall:new({
-                    value = VALUE.Symbol:new({ name = "custom-func" }),
+                    value = BuiltinClassModule.Symbol:new({ name = "custom-func" }),
                     params = {
-                        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                        AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
-                        AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                        AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                        AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
+                        AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                     },
                 }))
         end)
@@ -126,8 +127,8 @@ describe("Parser tests", function()
                 TEST_AST(
                     string.format("(%s a)", funcName),
                     AST.FunctionCall:new({
-                        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
-                        params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }) }
+                        value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
+                        params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }) }
                     }))
             end
         end)
@@ -140,10 +141,10 @@ describe("Parser tests", function()
                 TEST_AST(
                     string.format("(%s a 1)", funcName),
                     AST.FunctionCall:new({
-                        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
+                        value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
                         params = {
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                            AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                         },
                     }))
             end
@@ -157,11 +158,11 @@ describe("Parser tests", function()
                 TEST_AST(
                     string.format("(%s a b 1)", funcName),
                     AST.FunctionCall:new({
-                        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
+                        value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find(funcName) }),
                         params = {
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
-                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
+                            AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                         },
                     })
                 )
@@ -179,8 +180,8 @@ describe("Parser tests", function()
                 TEST_AST(
                     string.format("(%s a 1)", def),
                     AST.VariableDeclaration:new({
-                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                        value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                        name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                        value = AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                     })
                 )
             end
@@ -209,12 +210,12 @@ describe("Parser tests", function()
                     AST.LetDeclaration:new({
                         params = {
                             AST.VariableDeclaration:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
-                                value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }),
+                                value = AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                             }),
                             AST.VariableDeclaration:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
-                                value = AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "y" }) }),
+                                value = AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 2 }) }),
                             })
                         },
                         expressions = {},
@@ -236,8 +237,8 @@ describe("Parser tests", function()
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'x' }) }) }
                             }),
                         },
                     })
@@ -249,7 +250,7 @@ describe("Parser tests", function()
                 TEST_AST(
                     "(defun f1 ())",
                     AST.FuncDeclaration:new({
-                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
+                        name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "f1" }) }),
                         params = {},
                         expressions = {},
                     })
@@ -262,14 +263,14 @@ describe("Parser tests", function()
                         (defun f1 ( x y ))
                     ]],
                     AST.FuncDeclaration:new({
-                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
+                        name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "f1" }) }),
                         params = {
                             AST.VariableDeclaration:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }),
                                 value = AST.Empty:new({}),
                             }),
                             AST.VariableDeclaration:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "y" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "y" }) }),
                                 value = AST.Empty:new({}),
                             }),
                         },
@@ -284,13 +285,13 @@ describe("Parser tests", function()
                         (defun f1 ()()(print x))
                     ]],
                     AST.FuncDeclaration:new({
-                        name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "f1" }) }),
+                        name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "f1" }) }),
                         params = {},
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }) }
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }) }
                             }),
                         },
                     })
@@ -321,19 +322,19 @@ describe("Parser tests", function()
                         value = AST.LambdaDeclaration:new({
                             params = {
                                 AST.VariableDeclaration:new({
-                                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }),
+                                    name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'x' }) }),
                                     value = AST.Empty:new({}),
                                 }),
                                 AST.VariableDeclaration:new({
-                                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'y' }) }),
+                                    name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'y' }) }),
                                     value = AST.Empty:new({}),
                                 }),
                             },
                             expressions = {},
                         }),
                         params = {
-                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                            AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
+                            AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
+                            AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 2 }) }),
                         },
                     })
                 )
@@ -350,8 +351,8 @@ describe("Parser tests", function()
                             expressions = {
                                 AST.Empty:new({}),
                                 AST.FunctionCall:new({
-                                    value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                                    params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                                    value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                    params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'x' }) }) }
                                 })
                             },
                         }),
@@ -384,14 +385,14 @@ describe("Parser tests", function()
                 TEST_AST(
                     "(if a (print x) (print 2))",
                     AST.IfCall:new({
-                        condition = AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                        condition = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
                         thenExpr  = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                            params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                            params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'x' }) }) }
                         }),
                         elseExpr  = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                            params = { AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }) },
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                            params = { AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 2 }) }) },
                         }),
                     })
                 )
@@ -402,7 +403,7 @@ describe("Parser tests", function()
                 TEST_AST(
                     "(defclass person ()())",
                     AST.ClassDeclaration:new({
-                        name         = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                        name         = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "person" }) }),
                         superClasses = {},
                         slots        = {}
                     })
@@ -426,31 +427,31 @@ describe("Parser tests", function()
                         :accessor lisper)))
                     ]],
                     AST.ClassDeclaration:new({
-                        name         = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                        name         = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "person" }) }),
                         superClasses = {
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base1" }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "Base2" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "Base1" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "Base2" }) }),
                         },
                         slots        = {
                             AST.SlotDeclaration:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
-                                initarg = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "name" }) }),
+                                initarg = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "name" }) }),
                                 initform = AST.TrueConstant:new({}),
-                                accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "name" }) }),
-                                reader = AST.Variable:new({ value = VALUE.Symbol:new({ name = "getName" }) }),
-                                writer = AST.Variable:new({ value = VALUE.Symbol:new({ name = "setName" }) }),
+                                accessor = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "name" }) }),
+                                reader = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "getName" }) }),
+                                writer = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "setName" }) }),
                                 documentation = AST.StringConstant:new({
-                                    value = VALUE.SimpleBaseString:new({
+                                    value = BuiltinClassModule.SimpleBaseString:new({
                                         stringValue =
                                         "person"
                                     })
                                 }),
-                                allocation = AST.Variable:new({ value = VALUE.Symbol:new({ name = "class" }) }),
+                                allocation = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "class" }) }),
                             }),
                             AST.SlotDeclaration:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "lisper" }) }),
                                 initform = AST.NilConstant:new({}),
-                                accessor = AST.Variable:new({ value = VALUE.Symbol:new({ name = "lisper" }) }),
+                                accessor = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "lisper" }) }),
                             })
                         }
                     })
@@ -466,9 +467,9 @@ describe("Parser tests", function()
                             (:documentation ""))
                     ]],
                     AST.GenericDeclaration:new({
-                        name          = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        name          = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "speak" }) }),
                         documentation = AST.StringConstant:new({
-                            value = VALUE.SimpleBaseString:new({ stringValue = "" })
+                            value = BuiltinClassModule.SimpleBaseString:new({ stringValue = "" })
                         }),
                         params        = {},
                     })
@@ -481,16 +482,16 @@ describe("Parser tests", function()
                             (:documentation "Make the animal speak."))
                     ]],
                     AST.GenericDeclaration:new({
-                        name          = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        name          = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "speak" }) }),
                         documentation = AST.StringConstant:new({
-                            value = VALUE.SimpleBaseString:new({
+                            value = BuiltinClassModule.SimpleBaseString:new({
                                 stringValue =
                                 "Make the animal speak."
                             })
                         }),
                         params        = {
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
                         },
                     })
                 )
@@ -503,7 +504,7 @@ describe("Parser tests", function()
                         (defmethod speak ())
                     ]],
                     AST.MethodDeclaration:new({
-                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        name        = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "speak" }) }),
                         params      = {},
                         expressions = {},
                     })
@@ -519,29 +520,29 @@ describe("Parser tests", function()
                     )
                     ]],
                     AST.MethodDeclaration:new({
-                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        name        = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "speak" }) }),
                         params      = {
                             AST.TypedParam:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "animal" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                                value = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "animal" }) }),
                             }),
                             AST.TypedParam:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
-                                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
+                                value = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "person" }) }),
                             }),
                         },
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
                                 params = {
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
                                 },
                             }),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
                                 params = {
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
                                 },
                             }),
                         },
@@ -555,23 +556,23 @@ describe("Parser tests", function()
                     )
                     ]],
                     AST.MethodDeclaration:new({
-                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        name        = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "speak" }) }),
                         params      = {
                             AST.TypedParam:new({
-                                name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "animal" }) }),
+                                name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                                value = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "animal" }) }),
                             }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "c" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "c" }) }),
                         },
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("+") }),
                                 params = {
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'c' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'c' }) }),
                                 },
                             }),
                         },
@@ -585,20 +586,20 @@ describe("Parser tests", function()
                     )
                     ]],
                     AST.MethodDeclaration:new({
-                        name        = AST.Variable:new({ value = VALUE.Symbol:new({ name = "speak" }) }),
+                        name        = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "speak" }) }),
                         params      = {
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
-                            AST.Variable:new({ value = VALUE.Symbol:new({ name = "c" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
+                            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "c" }) }),
                         },
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("+") }),
                                 params = {
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'a' }) }),
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'b' }) }),
-                                    AST.Variable:new({ value = VALUE.Symbol:new({ name = 'c' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'b' }) }),
+                                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'c' }) }),
                                 },
                             }),
                         },
@@ -614,9 +615,9 @@ describe("Parser tests", function()
                         ())
                     ]],
                     AST.DoListCall:new({
-                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "item" }) }),
+                        value       = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "item" }) }),
                         list        = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {}
                         }),
                         expressions = {
@@ -633,13 +634,13 @@ describe("Parser tests", function()
                         (print item))
                     ]],
                     AST.DoListCall:new({
-                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "item" }) }),
+                        value       = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "item" }) }),
                         list        = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {
-                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                                AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
+                                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
                                 AST.TrueConstant:new({}),
                                 AST.NilConstant:new({}),
                             }
@@ -647,8 +648,8 @@ describe("Parser tests", function()
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "item" }) }), },
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "item" }) }), },
                             })
                         },
                     })
@@ -664,9 +665,9 @@ describe("Parser tests", function()
                         )
                     ]],
                     AST.DoTimesCall:new({
-                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }),
+                        value       = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "i" }) }),
                         times       = AST.IntegerConstant:new({
-                            value = VALUE.FixNum:new({ intValue = 5 }),
+                            value = BuiltinClassModule.FixNum:new({ intValue = 5 }),
                         }),
                         expressions = {
                             AST.Empty:new({})
@@ -683,15 +684,15 @@ describe("Parser tests", function()
                         )
                     ]],
                     AST.DoTimesCall:new({
-                        value       = AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }),
+                        value       = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "i" }) }),
                         times       = AST.IntegerConstant:new({
-                            value = VALUE.FixNum:new({ intValue = 5 }),
+                            value = BuiltinClassModule.FixNum:new({ intValue = 5 }),
                         }),
                         expressions = {
                             AST.Empty:new({}),
                             AST.FunctionCall:new({
-                                value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                                params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "i" }) }), },
+                                value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                                params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "i" }) }), },
                             })
                         },
                     })
@@ -706,9 +707,9 @@ describe("Parser tests", function()
                             do ())
                     ]],
                     AST.LoopCall:new({
-                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        value     = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }),
                         list      = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {},
                         }),
                         returnNil = true,
@@ -723,19 +724,19 @@ describe("Parser tests", function()
                             do (print x))
                     ]],
                     AST.LoopCall:new({
-                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        value     = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }),
                         list      = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 3 }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 2 }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 3 }) }),
                             },
                         }),
                         returnNil = true,
                         body      = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("print") }),
-                            params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }) }
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("print") }),
+                            params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'x' }) }) }
                         }),
                     })
                 )
@@ -747,9 +748,9 @@ describe("Parser tests", function()
                             collect ())
                     ]],
                     AST.LoopCall:new({
-                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        value     = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }),
                         list      = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {},
                         }),
                         returnNil = false,
@@ -764,21 +765,21 @@ describe("Parser tests", function()
                             collect (* x 10))
                     ]],
                     AST.LoopCall:new({
-                        value     = AST.Variable:new({ value = VALUE.Symbol:new({ name = "x" }) }),
+                        value     = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "x" }) }),
                         list      = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 1 }) }),
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 2 }) }),
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 3 }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 1 }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 2 }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 3 }) }),
                             },
                         }),
                         returnNil = false,
                         body      = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("*") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("*") }),
                             params = {
-                                AST.Variable:new({ value = VALUE.Symbol:new({ name = 'x' }) }),
-                                AST.IntegerConstant:new({ value = VALUE.FixNum:new({ intValue = 10 }) }),
+                                AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'x' }) }),
+                                AST.IntegerConstant:new({ value = BuiltinClassModule.FixNum:new({ intValue = 10 }) }),
                             }
                         }),
                     })
@@ -792,7 +793,7 @@ describe("Parser tests", function()
                         (map 'list (lambda () ()) '())
                     ]],
                     AST.MapCall:new({
-                        returnType = AST.Variable:new({ value = VALUE.Symbol:new({ name = "list" }) }),
+                        returnType = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "list" }) }),
                         lambda = AST.LambdaDeclaration:new({
                             params = {},
                             expressions = {
@@ -800,7 +801,7 @@ describe("Parser tests", function()
                             },
                         }),
                         list = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {}
                         }),
                     })
@@ -861,7 +862,7 @@ describe("Parser tests", function()
                             },
                         }),
                         list = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {}
                         }),
                     })
@@ -876,33 +877,33 @@ describe("Parser tests", function()
                         lambda = AST.LambdaDeclaration:new({
                             params = {
                                 AST.VariableDeclaration:new({
-                                    name = AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+                                    name = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "it" }) }),
                                     value = AST.Empty:new({}),
                                 }),
                             },
                             expressions = {
                                 AST.FunctionCall:new({
-                                    value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("+") }),
+                                    value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("+") }),
                                     params = {
-                                        AST.Variable:new({ value = VALUE.Symbol:new({ name = "it" }) }),
+                                        AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "it" }) }),
                                         AST.IntegerConstant:new({
-                                            value = VALUE.FixNum:new({ intValue = 10 }),
+                                            value = BuiltinClassModule.FixNum:new({ intValue = 10 }),
                                         }),
                                     }
                                 }),
                             },
                         }),
                         list = AST.FunctionCall:new({
-                            value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+                            value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
                             params = {
                                 AST.IntegerConstant:new({
-                                    value = VALUE.FixNum:new({ intValue = 1 }),
+                                    value = BuiltinClassModule.FixNum:new({ intValue = 1 }),
                                 }),
                                 AST.IntegerConstant:new({
-                                    value = VALUE.FixNum:new({ intValue = 2 }),
+                                    value = BuiltinClassModule.FixNum:new({ intValue = 2 }),
                                 }),
                                 AST.IntegerConstant:new({
-                                    value = VALUE.FixNum:new({ intValue = 3 }),
+                                    value = BuiltinClassModule.FixNum:new({ intValue = 3 }),
                                 }),
                             }
                         }),

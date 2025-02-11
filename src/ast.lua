@@ -1,4 +1,4 @@
-local VALUE = require("src.builtin_class")
+local BuiltinClassModule = require("src.builtin_class")
 
 ---@class AST_TYPE
 local AST_TYPE = {
@@ -79,7 +79,7 @@ local AST_TYPE = {
 ---@field value T
 AST = {
     astType = AST_TYPE.AST,
-    value = VALUE.Null:new({})
+    value = BuiltinClassModule.Null:new({})
 }
 
 ---@param o table

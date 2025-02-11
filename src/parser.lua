@@ -3,7 +3,7 @@ local ParserError = require("src.exception").ParserError
 local AST = require("src.ast")
 local Token = require("src.token").Token
 local TokenType = require("src.token_type").TokenType
-local VALUE = require("src.builtin_class")
+local BuiltinClassModule = require("src.builtin_class")
 
 ---@class Parser
 ---@field lexer Lexer
@@ -770,7 +770,7 @@ function Parser:quoteList()
     self:consume(TokenType.RPAREN)
 
     local funcCall = AST.FunctionCall:new({
-        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("list") }),
+        value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("list") }),
         params = params,
     })
     return funcCall
@@ -781,8 +781,8 @@ function Parser:quoteSymbol()
     self:consume(TokenType.SINGLE_QUOTE)
     local typeName = self:variable()
     ---@cast typeName Variable
-    if typeName.value.classType == VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
-        typeName.value = VALUE.Symbol:new({ name = typeName.value.name })
+    if typeName.value.classType == BuiltinClassModule.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
+        typeName.value = BuiltinClassModule.Symbol:new({ name = typeName.value.name })
     end
     return typeName
 end
@@ -799,7 +799,7 @@ function Parser:sharpVector()
     self:consume(TokenType.RPAREN)
 
     local funcCall = AST.FunctionCall:new({
-        value = VALUE.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
+        value = BuiltinClassModule.BuiltinFunction:new({ func = NativeMethod:find("vector") }),
         params = params,
     })
     return funcCall

@@ -1,6 +1,6 @@
 local InterpreterError = require("src.exception").InterpreterError
 local AST = require("src.ast")
-local VALUE = require("src.builtin_class")
+local BuiltinClassModule = require("src.builtin_class")
 local Util = require("src.util")
 local NativeMethod = require("src.builtin_function").NativeMethod
 
@@ -191,7 +191,7 @@ end
 ---@param empty Empty
 ---@return T
 function Interpreter:visitEmpty(empty)
-    return VALUE.Null:new({})
+    return BuiltinClassModule.Null:new({})
 end
 
 ---@param program Program
@@ -238,13 +238,13 @@ end
 ---@param constant TrueConstant
 ---@return T
 function Interpreter:visitTrueConstant(constant)
-    return VALUE.True:new({})
+    return BuiltinClassModule.True:new({})
 end
 
 ---@param constant NilConstant
 ---@return T
 function Interpreter:visitNilConstant(constant)
-    return VALUE.Null:new({})
+    return BuiltinClassModule.Null:new({})
 end
 
 ---if want to call a.b.c, then the expr will be (gethash 'c (gethash 'b a))
@@ -283,7 +283,7 @@ function Interpreter:visitLetDeclaration(declaration)
         local varValue = self:visit(declaration.params[i].value)
         self.localVars:add(varName, varValue)
     end
-    local result = VALUE.Null:new({})
+    local result = BuiltinClassModule.Null:new({})
     for i = 1, #declaration.expressions, 1 do
         result = self:visit(declaration.expressions[i])
     end
@@ -296,7 +296,7 @@ end
 ---@return T
 function Interpreter:visitIfCall(ifCall)
     local flag = self:visit(ifCall.condition)
-    if flag.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+    if flag.classType ~= BuiltinClassModule.BUILT_IN_CLASS.NULL then
         local thenResult = self:visit(ifCall.thenExpr)
         return thenResult
     else
@@ -311,7 +311,7 @@ function Interpreter:visitFuncDeclaration(declaration)
     self:toggleDeclaring()
     local funcName = self:visit(declaration.name)
     self:toggleDeclaring()
-    local result = VALUE.UserDefinedFunction:new({
+    local result = BuiltinClassModule.UserDefinedFunction:new({
         params = declaration.params,
         expressions = declaration.expressions,
     })
@@ -322,7 +322,7 @@ end
 ---@param declaration SlotDeclaration
 ---@return SlotValue
 function Interpreter:visitSlotDeclaration(declaration)
-    local slotValue = VALUE.SlotValue:new({
+    local slotValue = BuiltinClassModule.SlotValue:new({
         name = Null:new({}),
         accessor = Null:new({}),
         accessorSymbol = Null:new({}),
@@ -348,7 +348,7 @@ function Interpreter:visitSlotDeclaration(declaration)
         end
         slotValue["allocation"] = allocation
     else
-        slotValue["allocation"] = VALUE.Symbol:new({ name = "instance" })
+        slotValue["allocation"] = BuiltinClassModule.Symbol:new({ name = "instance" })
     end
 
     if declaration.initarg ~= nil then
@@ -403,7 +403,7 @@ end
 ---@param declaration ClassDeclaration
 ---@return StandardClass
 function Interpreter:visitClassDeclaration(declaration)
-    local standardClass = VALUE.StandardClass:new({
+    local standardClass = BuiltinClassModule.StandardClass:new({
         name = Null:new({}),
         superClassRefs = {},
         initArgs = {},
@@ -437,19 +437,19 @@ function Interpreter:visitClassDeclaration(declaration)
         local isStaticField = string.lower(slotValue.allocation.name) == "class"
         if isStaticField then
             standardClass.staticFields[slotValue.name:asKey()] =
-                slotValue.initform ~= VALUE.BUILT_IN_CLASS.NULL
+                slotValue.initform ~= BuiltinClassModule.BUILT_IN_CLASS.NULL
                 and slotValue.initform
-                or VALUE.Null:new({})
+                or BuiltinClassModule.Null:new({})
         else
             standardClass.instanceFields[slotValue.name:asKey()] =
-                slotValue.initform ~= VALUE.BUILT_IN_CLASS.NULL
+                slotValue.initform ~= BuiltinClassModule.BUILT_IN_CLASS.NULL
                 and slotValue.initform
-                or VALUE.Null:new({})
+                or BuiltinClassModule.Null:new({})
         end
-        if slotValue.initarg.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+        if slotValue.initarg.classType ~= BuiltinClassModule.BUILT_IN_CLASS.NULL then
             standardClass.initArgs[slotValue.initarg:asKey()] = slotValue.initform
         end
-        if slotValue.accessorSymbol.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+        if slotValue.accessorSymbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.NULL then
             if methodNameSet[slotValue.accessorSymbol] ~= nil then
                 error(InterpreterError:new({}))
             end
@@ -457,7 +457,7 @@ function Interpreter:visitClassDeclaration(declaration)
             standardClass:setMethod(slotValue.accessorSymbol, slotValue.accessor)
             self.methodStack:add(slotValue.accessorSymbol, standardClass)
         end
-        if slotValue.readerSymbol.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+        if slotValue.readerSymbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.NULL then
             if methodNameSet[slotValue.readerSymbol] ~= nil then
                 error(InterpreterError:new({}))
             end
@@ -465,7 +465,7 @@ function Interpreter:visitClassDeclaration(declaration)
             standardClass:setMethod(slotValue.readerSymbol, slotValue.reader)
             self.methodStack:add(slotValue.readerSymbol, standardClass)
         end
-        if slotValue.writerSymbol.classType ~= VALUE.BUILT_IN_CLASS.NULL then
+        if slotValue.writerSymbol.classType ~= BuiltinClassModule.BUILT_IN_CLASS.NULL then
             if methodNameSet[slotValue.writerSymbol] ~= nil then
                 error(InterpreterError:new({}))
             end
@@ -502,7 +502,7 @@ function Interpreter:visitMethodDeclaration(declaration)
     self:toggleDeclaring()
     local methodName = self:visit(declaration.name)
     self:toggleDeclaring()
-    local method = VALUE.Method:new({
+    local method = BuiltinClassModule.Method:new({
         name = methodName,
         isAccessorMethod = false,
         params = declaration.params,
@@ -521,7 +521,7 @@ end
 ---@param declaration LambdaDeclaration
 ---@return LambdaFunction
 function Interpreter:visitLambdaDeclaration(declaration)
-    local lambdaDecl = VALUE.LambdaFunction:new({
+    local lambdaDecl = BuiltinClassModule.LambdaFunction:new({
         params = declaration.params,
         expressions = declaration.expressions,
     })
@@ -533,18 +533,18 @@ end
 ---@return T
 function Interpreter:visitFunctionCall(funcCall)
     local funcType = funcCall.value.classType
-    if funcType == VALUE.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
+    if funcType == BuiltinClassModule.BUILT_IN_CLASS.BUILT_IN_FUNCTION then
         local success, result = pcall(funcCall.value.func, self, funcCall.params)
         if not success then
             error(InterpreterError:new({}))
         end
         return result
-    elseif funcType == VALUE.BUILT_IN_CLASS.SYMBOL then
+    elseif funcType == BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
         -- see lexer.lua `function Lexer:identifier()` :344
         local funcName = funcCall.value
         local func = self:get(funcName)
         if func ~= nil then
-            if func.classType == VALUE.BUILT_IN_CLASS.USER_DEFINED_FUNCTION then
+            if func.classType == BuiltinClassModule.BUILT_IN_CLASS.USER_DEFINED_FUNCTION then
                 ---@cast func UserDefinedFunction
                 local formalParams, expressions = func.params, func.expressions
                 local actualParams = funcCall.params
@@ -559,13 +559,13 @@ function Interpreter:visitFunctionCall(funcCall)
                     local varValue = self:visitExpr(actualParams[i])
                     self.localVars:add(varName, varValue)
                 end
-                local result = VALUE.Null:new({})
+                local result = BuiltinClassModule.Null:new({})
                 for i = 1, #expressions, 1 do
                     result = self:interpret(expressions[i])
                 end
                 self:leaveScope()
                 return result
-            elseif func.classType == VALUE.BUILT_IN_CLASS.METHOD then
+            elseif func.classType == BuiltinClassModule.BUILT_IN_CLASS.METHOD then
                 ---@cast func Method
                 local formalParams, expressions = func.params, func.expressions
                 local actualParams = funcCall.params
@@ -589,7 +589,7 @@ function Interpreter:visitFunctionCall(funcCall)
                     end
                     self.localVars:add(varName, varValue)
                 end
-                local result = VALUE.Null:new({})
+                local result = BuiltinClassModule.Null:new({})
                 for i = 1, #expressions, 1 do
                     result = self:interpret(expressions[i])
                 end
@@ -642,7 +642,7 @@ function Interpreter:visitLambdaCall(lambdaCall)
         local varValue = lambdaCall.primitive and self:visitExpr(actualParams[i]) or actualParams[i]
         self.localVars:add(varName, varValue)
     end
-    local result = VALUE.Null:new({})
+    local result = BuiltinClassModule.Null:new({})
     for i = 1, #expressions, 1 do
         result = self:interpret(expressions[i])
     end
@@ -657,9 +657,9 @@ function Interpreter:visitDoTimesCall(doTimesCall)
     self:toggleDeclaring()
     local loopSymbol = self:visit(doTimesCall.value)
     self:toggleDeclaring()
-    self.localVars:add(loopSymbol, VALUE.FixNum:new({ intValue = 0 }))
+    self.localVars:add(loopSymbol, BuiltinClassModule.FixNum:new({ intValue = 0 }))
     local times = self:visit(doTimesCall.times)
-    if times.classType ~= VALUE.BUILT_IN_CLASS.FIX_NUM then
+    if times.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
         error(InterpreterError:new({}))
     end
     ---@cast times FixNum
@@ -670,7 +670,7 @@ function Interpreter:visitDoTimesCall(doTimesCall)
     else
         local expressions = doTimesCall.expressions
         for i = 1, intValue, 1 do
-            self.localVars:add(loopSymbol, VALUE.FixNum:new({ intValue = i - 1 }))
+            self.localVars:add(loopSymbol, BuiltinClassModule.FixNum:new({ intValue = i - 1 }))
             for _, value in ipairs(expressions) do
                 self:visit(value)
             end
@@ -678,7 +678,7 @@ function Interpreter:visitDoTimesCall(doTimesCall)
         self:leaveScope()
     end
 
-    return VALUE.Null:new({})
+    return BuiltinClassModule.Null:new({})
 end
 
 ---@param doListCall DoListCall
@@ -688,17 +688,17 @@ function Interpreter:visitDoListCall(doListCall)
     self:toggleDeclaring()
     local item = self:visit(doListCall.value)
     self:toggleDeclaring()
-    self.localVars:add(item, VALUE.Null:new({}))
+    self.localVars:add(item, BuiltinClassModule.Null:new({}))
     local list = self:visit(doListCall.list)
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
 
-    local result = VALUE.Null:new({})
+    local result = BuiltinClassModule.Null:new({})
     ---@cast list List
     local elements = list.elements
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
         do end
     elseif #elements == 0 then
         do end
@@ -723,17 +723,17 @@ function Interpreter:visitLoopCall(loopCall)
     self:toggleDeclaring()
     local item = self:visit(loopCall.value)
     self:toggleDeclaring()
-    self.localVars:add(item, VALUE.Null:new({}))
+    self.localVars:add(item, BuiltinClassModule.Null:new({}))
     local list = self:visit(loopCall.list)
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
     ---@cast list List
     local elements = list.elements
 
-    local result = VALUE.Null:new({})
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
+    local result = BuiltinClassModule.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
         do end
     elseif #elements == 0 then
         do end
@@ -749,7 +749,7 @@ function Interpreter:visitLoopCall(loopCall)
                 self.localVars:add(item, element)
                 table.insert(newElements, self:visit(loopCall.body))
             end
-            result = VALUE.Cons:new({ elements = newElements })
+            result = BuiltinClassModule.Cons:new({ elements = newElements })
         end
     end
 
@@ -761,17 +761,17 @@ end
 ---@return T
 function Interpreter:visitMapCall(mapCall)
     local list = self:visit(mapCall.list)
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
     ---@cast list List
     local elements = list.elements
 
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     elseif #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     else
         local newElements = {}
         for _, element in ipairs(elements) do
@@ -784,13 +784,13 @@ function Interpreter:visitMapCall(mapCall)
         ---@cast returnType Symbol
         local returnTypeName = returnType.name
         if returnTypeName == "list" then
-            return VALUE.Cons:new({ elements = newElements })
+            return BuiltinClassModule.Cons:new({ elements = newElements })
         elseif returnTypeName == "vector" then
-            return VALUE.SimpleVector:new({ elements = newElements })
+            return BuiltinClassModule.SimpleVector:new({ elements = newElements })
         elseif returnTypeName == "string" then
             local characters = {}
             for _, character in ipairs(newElements) do
-                if character.classType ~= VALUE.BUILT_IN_CLASS.CHARACTER then
+                if character.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
                     error(InterpreterError:new({}))
                 end
                 local ch = string.sub(character.chars, 3)
@@ -798,7 +798,7 @@ function Interpreter:visitMapCall(mapCall)
                     table.insert(characters, ch)
                 end
             end
-            return VALUE.SimpleBaseString:new({ stringValue = table.concat(characters, "") })
+            return BuiltinClassModule.SimpleBaseString:new({ stringValue = table.concat(characters, "") })
         else
             error(InterpreterError:new({}))
         end
@@ -809,24 +809,24 @@ end
 ---@return T
 function Interpreter:visitMapcarCall(mapcarCall)
     local list = self:visit(mapcarCall.list)
-    if list.superClassType ~= VALUE.BUILT_IN_CLASS.LIST then
+    if list.superClassType ~= BuiltinClassModule.BUILT_IN_CLASS.LIST then
         error(InterpreterError:new({}))
     end
 
     ---@cast list List
     local elements = list.elements
 
-    if list.classType == VALUE.BUILT_IN_CLASS.NULL then
-        return VALUE.Null:new({})
+    if list.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+        return BuiltinClassModule.Null:new({})
     elseif #elements == 0 then
-        return VALUE.Null:new({})
+        return BuiltinClassModule.Null:new({})
     else
         local newElements = {}
         for _, element in ipairs(elements) do
             local lambdaCall = AST.LambdaCall:new({ value = mapcarCall.lambda, params = { element }, primitive = false })
             table.insert(newElements, self:visit(lambdaCall))
         end
-        return VALUE.Cons:new({ elements = newElements })
+        return BuiltinClassModule.Cons:new({ elements = newElements })
     end
 end
 

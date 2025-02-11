@@ -143,7 +143,7 @@ local Parser = require("src.parser").Parser
 local Interpreter = require("src.interpreter").Interpreter
 local NativeMethod = require("src.builtin_function").NativeMethod
 local AST = require("src.ast")
-local VALUE = require("src.builtin_class")
+local BuiltinClassModule = require("src.builtin_class")
 
 local text = [[
     (defclass person ()((age :initarg :age :accessor age)))
@@ -159,51 +159,51 @@ local ast = parser:parse()
 local results = interpreter:interpret(ast)
 print(results)
 local expects = {
-    VALUE.StandardClass:new({
-        name = VALUE.Symbol:new({ name = "person" }),
+    BuiltinClassModule.StandardClass:new({
+        name = BuiltinClassModule.Symbol:new({ name = "person" }),
         initArgs = {
-            [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+            [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
         },
         superClassRefs = {},
         staticFields = {},
         instanceFields = {
-            [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Null:new({}),
+            [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
         },
         methods = {
-            [VALUE.Symbol:new({ name = "age" }):asKey()] = VALUE.Method:new({
+            [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Method:new({
                 isAccessorMethod = true,
-                func = VALUE.BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
-                target = VALUE.Symbol:new({ name = "age" }),
+                func = BuiltinClassModule.BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                target = BuiltinClassModule.Symbol:new({ name = "age" }),
             }),
         },
     }),
-    VALUE.Method:new({
-        name = VALUE.Symbol:new({ name = "grow" }),
+    BuiltinClassModule.Method:new({
+        name = BuiltinClassModule.Symbol:new({ name = "grow" }),
         isAccessorMethod = false,
         params = {
             AST.TypedParam:new({
-                name  = AST.Variable:new({ value = VALUE.Symbol:new({ name = "p" }) }),
-                value = AST.Variable:new({ value = VALUE.Symbol:new({ name = "person" }) }),
+                name  = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "p" }) }),
+                value = AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "person" }) }),
             }),
-            AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-            AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+            AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
         },
         expressions = {
             AST.FunctionCall:new({
-                value = VALUE.BuiltinFunction:new({ name = "+", func = NativeMethod:find("+") }),
+                value = BuiltinClassModule.BuiltinFunction:new({ name = "+", func = NativeMethod:find("+") }),
                 params = {
                     AST.FunctionCall:new({
-                        params = { AST.Variable:new({ value = VALUE.Symbol:new({ name = "p" }) }) },
-                        value  = VALUE.Symbol:new({ name = "age" }),
+                        params = { AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "p" }) }) },
+                        value  = BuiltinClassModule.Symbol:new({ name = "age" }),
                     }),
-                    AST.Variable:new({ value = VALUE.Symbol:new({ name = "a" }) }),
-                    AST.Variable:new({ value = VALUE.Symbol:new({ name = "b" }) }),
+                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "a" }) }),
+                    AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = "b" }) }),
                 },
             })
         },
     }),
-    VALUE.Symbol:new({ name = "p1" }),
-    VALUE.FixNum:new({ intValue = 13 })
+    BuiltinClassModule.Symbol:new({ name = "p1" }),
+    BuiltinClassModule.FixNum:new({ intValue = 13 })
 }
 local flag    = true
 for i = 1, #results do
