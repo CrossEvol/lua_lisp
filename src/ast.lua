@@ -3,6 +3,7 @@ local BuiltinClassModule = require("src.builtin_class")
 ---@class AST_TYPE
 local AST_TYPE = {
     AST = "AST",
+    OPTIONAL_AST = "OptionalAST",
     PROGRAM = "Program",
     EXPR = "Expr",
     EMPTY = "Empty",
@@ -40,6 +41,7 @@ local AST_TYPE = {
 
 ---@alias AST_TYPE.Type
 ---| '"AST"'
+---| '"OptionalAST"'
 ---| '"PROGRAM"'
 ---| '"Expr"'
 ---| '"Empty"'
@@ -113,6 +115,11 @@ end
 function AST:getValue()
     return self.value
 end
+
+---used as a wrapper for any T, when interpret this, just return its value
+---@class OptionalAST : AST
+---@field value T
+OptionalAST = AST:new({ astType = AST_TYPE.OPTIONAL_AST, value = T })
 
 ---@class Expr : AST
 Expr = AST:new({ astType = AST_TYPE.EXPR })
@@ -683,7 +690,7 @@ end
 
 ---@class FunctionCall : Expr
 ---@field value Function | Symbol
----@field params table<Expr, integer>
+---@field params table<integer, Expr>
 FunctionCall = Expr:new({ astType = AST_TYPE.FUNCTION_CALL, params = {} })
 
 ---@param obj1 FunctionCall
@@ -917,6 +924,7 @@ end
 
 return {
     AST = AST,
+    OptionalAST = OptionalAST,
     AST_TYPE = AST_TYPE,
     Expr = Expr,
     Empty = Empty,

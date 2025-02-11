@@ -67,7 +67,8 @@ describe("Interpreter tests", function()
 
     context("interpret Declaration", function()
         it("VariableDeclaration", function()
-            TEST_INTERPRETER([[(defvar a 1) a]], BuiltinClassModule.Symbol:new({ name = "a" }), BuiltinClassModule.FixNum:new({ intValue = 1 }))
+            TEST_INTERPRETER([[(defvar a 1) a]], BuiltinClassModule.Symbol:new({ name = "a" }),
+                BuiltinClassModule.FixNum:new({ intValue = 1 }))
             TEST_INTERPRETER([[(defconstant b 2) b]], BuiltinClassModule.Symbol:new({ name = "b" }),
                 BuiltinClassModule.FixNum:new({ intValue = 2 }))
             TEST_INTERPRETER([[(defparameter c 3) c]], BuiltinClassModule.Symbol:new({ name = "c" }),
@@ -386,7 +387,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER([[(eq T T)]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(eq NIL NIL)]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(eq #\A #\A)]], BuiltinClassModule.Null:new({}))
-            TEST_INTERPRETER([[(defvar a 1)(eq a a)]], BuiltinClassModule.Symbol:new({ name = "a" }), BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(defvar a 1)(eq a a)]], BuiltinClassModule.Symbol:new({ name = "a" }),
+                BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(eq "" "")]], BuiltinClassModule.Null:new({}))
             TEST_INTERPRETER([[(eq '(1 2 3) '(1 2 3))]], BuiltinClassModule.Null:new({}))
         end)
@@ -402,7 +404,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER([[(eql T T)]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(eql NIL NIL)]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(eql #\A #\A)]], BuiltinClassModule.True:new({}))
-            TEST_INTERPRETER([[(defvar a 1)(eql a a)]], BuiltinClassModule.Symbol:new({ name = "a" }), BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(defvar a 1)(eql a a)]], BuiltinClassModule.Symbol:new({ name = "a" }),
+                BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(eql "" "")]], BuiltinClassModule.Null:new({}))
             TEST_INTERPRETER([[(eql '(1 2 3) '(1 2 3))]], BuiltinClassModule.Null:new({}))
         end)
@@ -418,7 +421,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER([[(equal T T)]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(equal NIL NIL)]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(equal #\A #\A)]], BuiltinClassModule.True:new({}))
-            TEST_INTERPRETER([[(defvar a 1)(equal a a)]], BuiltinClassModule.Symbol:new({ name = "a" }), BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(defvar a 1)(equal a a)]], BuiltinClassModule.Symbol:new({ name = "a" }),
+                BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(equal "" "")]], BuiltinClassModule.True:new({}))
             TEST_INTERPRETER([[(equal '(1 2 3) '(1 2 3))]], BuiltinClassModule.True:new({}))
         end)
@@ -429,13 +433,15 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER([[(type-of T)]], BuiltinClassModule.ValueType:new({ typeName = "BOOLEAN" }))
             TEST_INTERPRETER([[(type-of -1)]], BuiltinClassModule.ValueType:new({ typeName = "FIXNUM" }))
             TEST_INTERPRETER([[(type-of 1)]], BuiltinClassModule.ValueType:new({ typeName = "(INTEGER 0 2147483647)" }))
-            TEST_INTERPRETER([[(type-of 2147483648)]], BuiltinClassModule.ValueType:new({ typeName = "(INTEGER 2147483648)" }))
+            TEST_INTERPRETER([[(type-of 2147483648)]],
+                BuiltinClassModule.ValueType:new({ typeName = "(INTEGER 2147483648)" }))
             TEST_INTERPRETER([[(type-of 1.2)]], BuiltinClassModule.ValueType:new({ typeName = "SINGLE-FLOAT" }))
             TEST_INTERPRETER([[(type-of 1/2)]], BuiltinClassModule.ValueType:new({ typeName = "RATIO" }))
             TEST_INTERPRETER([[(type-of nil)]], BuiltinClassModule.ValueType:new({ typeName = "NULL" }))
             TEST_INTERPRETER([[(type-of #\A)]], BuiltinClassModule.ValueType:new({ typeName = "STANDARD-CHAR" }))
             TEST_INTERPRETER([[(type-of "")]], BuiltinClassModule.ValueType:new({ typeName = "(SIMPLE-BASE-STRING 0)" }))
-            TEST_INTERPRETER([[(type-of "abc")]], BuiltinClassModule.ValueType:new({ typeName = "(SIMPLE-BASE-STRING 3)" }))
+            TEST_INTERPRETER([[(type-of "abc")]],
+                BuiltinClassModule.ValueType:new({ typeName = "(SIMPLE-BASE-STRING 3)" }))
             TEST_INTERPRETER([[(type-of (defvar a 1))]], BuiltinClassModule.ValueType:new({ typeName = "SYMBOL" }))
             TEST_INTERPRETER([[(defvar a 1)(type-of a)]],
                 BuiltinClassModule.Symbol:new({ name = "a" }),
@@ -444,8 +450,10 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER([[(type-of (cons 1 2))]], BuiltinClassModule.ValueType:new({ typeName = "CONS" }))
             TEST_INTERPRETER([[(type-of (list 1 2 3))]], BuiltinClassModule.ValueType:new({ typeName = "CONS" }))
             TEST_INTERPRETER([[(type-of (vector))]], BuiltinClassModule.ValueType:new({ typeName = "(SIMPLE-VECTOR 0)" }))
-            TEST_INTERPRETER([[(type-of (vector 1 2 3))]], BuiltinClassModule.ValueType:new({ typeName = "(SIMPLE-VECTOR 3)" }))
-            TEST_INTERPRETER([[(type-of (make-hash-table))]], BuiltinClassModule.ValueType:new({ typeName = "HASH-TABLE" }))
+            TEST_INTERPRETER([[(type-of (vector 1 2 3))]],
+                BuiltinClassModule.ValueType:new({ typeName = "(SIMPLE-VECTOR 3)" }))
+            TEST_INTERPRETER([[(type-of (make-hash-table))]],
+                BuiltinClassModule.ValueType:new({ typeName = "HASH-TABLE" }))
         end)
         it("random", function()
             local TEST_INTERPRETER_RANDOM = function(text, ...)
@@ -605,7 +613,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER_ERROR([[(make-string 3 :initial-element #\@ #\@)]])
             TEST_INTERPRETER([[(make-string 0)]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "" }))
             TEST_INTERPRETER([[(make-string 3)]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "   " }))
-            TEST_INTERPRETER([[(make-string 0 :initial-element #\@)]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "" }))
+            TEST_INTERPRETER([[(make-string 0 :initial-element #\@)]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "" }))
             TEST_INTERPRETER([[(make-string 3 :initial-element #\@)]],
                 BuiltinClassModule.SimpleBaseString:new({ stringValue = "@@@" }))
         end)
@@ -615,8 +624,10 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER_ERROR([[(string-upcase 1)]])
             TEST_INTERPRETER_ERROR([[(string-upcase "" "")]])
             TEST_INTERPRETER([[(string-upcase "")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "" }))
-            TEST_INTERPRETER([[(string-upcase "COOL")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "COOL" }))
-            TEST_INTERPRETER([[(string-upcase "cool")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "COOL" }))
+            TEST_INTERPRETER([[(string-upcase "COOL")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "COOL" }))
+            TEST_INTERPRETER([[(string-upcase "cool")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "COOL" }))
         end)
         it("string-downcase", function()
             TEST_INTERPRETER_ERROR([[(string-downcase)]])
@@ -624,8 +635,10 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER_ERROR([[(string-downcase 1)]])
             TEST_INTERPRETER_ERROR([[(string-downcase "" "")]])
             TEST_INTERPRETER([[(string-downcase "")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "" }))
-            TEST_INTERPRETER([[(string-downcase "COOL")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "cool" }))
-            TEST_INTERPRETER([[(string-downcase "cool")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "cool" }))
+            TEST_INTERPRETER([[(string-downcase "COOL")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "cool" }))
+            TEST_INTERPRETER([[(string-downcase "cool")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "cool" }))
         end)
         it("string-capitalize", function()
             TEST_INTERPRETER_ERROR([[(string-capitalize)]])
@@ -690,7 +703,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER([[(concatenate 'string "")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "" }))
             TEST_INTERPRETER([[(concatenate 'list "")]], BuiltinClassModule.Null:new({}))
             TEST_INTERPRETER([[(concatenate 'vector)]], BuiltinClassModule.SimpleVector:new({ elements = {} }))
-            TEST_INTERPRETER([[(concatenate 'string "a" "b" "c")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "abc" }))
+            TEST_INTERPRETER([[(concatenate 'string "a" "b" "c")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "abc" }))
             TEST_INTERPRETER([[(concatenate 'list "a" "b" "c")]],
                 BuiltinClassModule.Cons:new({
                     elements = {
@@ -775,22 +789,27 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER_ERROR([[(substitute #\u #\o)]])
             TEST_INTERPRETER_ERROR([[(substitute #\u #\o #\a)]])
             TEST_INTERPRETER_ERROR([[(substitute "u" "o" "uuu")]])
-            TEST_INTERPRETER([[(substitute #\u #\o "uuu")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "ooo" }))
-            TEST_INTERPRETER([[(substitute #\a #\A "aaabbb")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "AAAbbb" }))
+            TEST_INTERPRETER([[(substitute #\u #\o "uuu")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "ooo" }))
+            TEST_INTERPRETER([[(substitute #\a #\A "aaabbb")]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "AAAbbb" }))
         end)
         it("symbol-name", function()
             TEST_INTERPRETER_ERROR([[(symbol-name)]])
             TEST_INTERPRETER_ERROR([[(symbol-name "")]])
             TEST_INTERPRETER_ERROR([[(symbol-name 'my-symbol 'a)]])
-            TEST_INTERPRETER([[(symbol-name 'my-symbol)]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "MY-SYMBOL" }))
-            TEST_INTERPRETER([[(symbol-name 'MY-SYMBOL)]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "MY-SYMBOL" }))
+            TEST_INTERPRETER([[(symbol-name 'my-symbol)]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "MY-SYMBOL" }))
+            TEST_INTERPRETER([[(symbol-name 'MY-SYMBOL)]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "MY-SYMBOL" }))
         end)
         it("remove", function()
             TEST_INTERPRETER_ERROR([[(remove)]])
             TEST_INTERPRETER_ERROR([[(remove #\a)]])
             TEST_INTERPRETER_ERROR([[(remove #\a "aaabc" :start 5)]])
             TEST_INTERPRETER([[(remove #\a "abc")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "bc" }))
-            TEST_INTERPRETER([[(remove #\a "aaabc" :start 1)]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "abc" }))
+            TEST_INTERPRETER([[(remove #\a "aaabc" :start 1)]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "abc" }))
         end)
         it("append", function()
             TEST_INTERPRETER_ERROR([[(append)]])
@@ -883,7 +902,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER_ERROR([[(rest #())]])
             TEST_INTERPRETER([[(rest '())]], BuiltinClassModule.Null:new({}))
             TEST_INTERPRETER([[(rest '(1))]], BuiltinClassModule.Null:new({}))
-            TEST_INTERPRETER([[(rest '(1 2))]], BuiltinClassModule.Cons:new({ elements = { BuiltinClassModule.FixNum:new({ intValue = 2 }) } }))
+            TEST_INTERPRETER([[(rest '(1 2))]],
+                BuiltinClassModule.Cons:new({ elements = { BuiltinClassModule.FixNum:new({ intValue = 2 }) } }))
             TEST_INTERPRETER([[(rest '(1 2 3))]],
                 BuiltinClassModule.Cons:new({
                     elements = {
@@ -942,7 +962,8 @@ describe("Interpreter tests", function()
             TEST_INTERPRETER_ERROR([[(cdr #())]])
             TEST_INTERPRETER([[(cdr '())]], BuiltinClassModule.Null:new({}))
             TEST_INTERPRETER([[(cdr '(1))]], BuiltinClassModule.Null:new({}))
-            TEST_INTERPRETER([[(cdr '(1 2))]], BuiltinClassModule.Cons:new({ elements = { BuiltinClassModule.FixNum:new({ intValue = 2 }) } }))
+            TEST_INTERPRETER([[(cdr '(1 2))]],
+                BuiltinClassModule.Cons:new({ elements = { BuiltinClassModule.FixNum:new({ intValue = 2 }) } }))
             TEST_INTERPRETER([[(cdr '(1 2 3))]],
                 BuiltinClassModule.Cons:new({
                     elements = {
@@ -1237,6 +1258,58 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.Null:new({})
             )
         end)
+        it("funcall", function()
+            TEST_INTERPRETER_ERROR([[(funcall)]])
+            TEST_INTERPRETER_ERROR([[(funcall 'print)]])
+            TEST_INTERPRETER_ERROR([[(funcall 'print "abc" "efg")]])
+            TEST_INTERPRETER([[(funcall '+ 1 2)]], BuiltinClassModule.FixNum:new({ intValue = 3 }))
+            TEST_INTERPRETER([[(funcall 'print "abc")]], BuiltinClassModule.SimpleBaseString:new({ stringValue = "abc" }))
+            TEST_INTERPRETER([[
+                (defun add (a b)(+ a b))
+                (funcall 'add 1 2)
+            ]],
+                BuiltinClassModule.Symbol:new({ name = "add" }),
+                BuiltinClassModule.FixNum:new({ intValue = 3 })
+            )
+            TEST_INTERPRETER([[
+                (defvar a 1)
+                (defvar b 2)
+                (defun add (a1 b1)(+ a1 b1))
+                (funcall 'add a b)
+            ]],
+                BuiltinClassModule.Symbol:new({ name = "a" }),
+                BuiltinClassModule.Symbol:new({ name = "b" }),
+                BuiltinClassModule.Symbol:new({ name = "add" }),
+                BuiltinClassModule.FixNum:new({ intValue = 3 })
+            )
+        end)
+        it("apply", function()
+            TEST_INTERPRETER_ERROR([[(apply)]])
+            TEST_INTERPRETER_ERROR([[(apply 'print)]])
+            TEST_INTERPRETER_ERROR([[(apply '+ #(1 2))]])
+            TEST_INTERPRETER([[(apply #'+ '(1 2))]], BuiltinClassModule.FixNum:new({ intValue = 3 }))
+            TEST_INTERPRETER([[(apply '+ '(1 2))]], BuiltinClassModule.FixNum:new({ intValue = 3 }))
+            TEST_INTERPRETER([[(apply 'print '("abc"))]],
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "abc" }))
+            TEST_INTERPRETER([[
+                (defun add (a b)(+ a b))
+                (apply 'add '(1 2))
+            ]],
+                BuiltinClassModule.Symbol:new({ name = "add" }),
+                BuiltinClassModule.FixNum:new({ intValue = 3 })
+            )
+            TEST_INTERPRETER([[
+                (defvar a 1)
+                (defvar b 2)
+                (defun add (a1 b1)(+ a1 b1))
+                (apply 'add '(a b))
+            ]],
+                BuiltinClassModule.Symbol:new({ name = "a" }),
+                BuiltinClassModule.Symbol:new({ name = "b" }),
+                BuiltinClassModule.Symbol:new({ name = "add" }),
+                BuiltinClassModule.FixNum:new({ intValue = 3 })
+            )
+        end)
     end)
     context("FlowControl", function()
         it("IfCall", function()
@@ -1492,13 +1565,15 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "person" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                         [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
                     },
                     superClassRefs = {},
                     staticFields = {},
                     instanceFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                         [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
                     },
                     methods = {
@@ -1560,12 +1635,14 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "person" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     superClassRefs = {},
                     staticFields = {},
                     instanceFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     methods = {
                         [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = Method:new({
@@ -1601,11 +1678,13 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "person" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     superClassRefs = {},
                     staticFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "omf" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "omf" }),
                     },
                     instanceFields = {},
                     methods = {
@@ -1645,12 +1724,14 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "person" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     superClassRefs = {},
                     staticFields = {},
                     instanceFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     methods = {
                         [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = Method:new({
@@ -1663,25 +1744,28 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "user" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                         [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
                     },
                     superClassRefs = {
                         BuiltinClassModule.StandardClass:new({
                             name = BuiltinClassModule.Symbol:new({ name = "person" }),
                             initArgs = {
-                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({
-                                    stringValue =
-                                    "me"
-                                }),
+                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule
+                                    .SimpleBaseString:new({
+                                        stringValue =
+                                        "me"
+                                    }),
                             },
                             superClassRefs = {},
                             staticFields = {},
                             instanceFields = {
-                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({
-                                    stringValue =
-                                    "me"
-                                }),
+                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule
+                                    .SimpleBaseString:new({
+                                        stringValue =
+                                        "me"
+                                    }),
                             },
                             methods = {
                                 [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = Method:new({
@@ -1698,7 +1782,8 @@ describe("Interpreter tests", function()
                     },
                     staticFields = {},
                     instanceFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                         [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
                     },
                     methods = {
@@ -1738,12 +1823,14 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "father" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     superClassRefs = {},
                     staticFields = {},
                     instanceFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                     },
                     methods = {
                         [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = Method:new({
@@ -1774,25 +1861,28 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.StandardClass:new({
                     name = BuiltinClassModule.Symbol:new({ name = "person" }),
                     initArgs = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                         [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
                     },
                     superClassRefs = {
                         BuiltinClassModule.StandardClass:new({
                             name = BuiltinClassModule.Symbol:new({ name = "father" }),
                             initArgs = {
-                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({
-                                    stringValue =
-                                    "me"
-                                }),
+                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule
+                                    .SimpleBaseString:new({
+                                        stringValue =
+                                        "me"
+                                    }),
                             },
                             superClassRefs = {},
                             staticFields = {},
                             instanceFields = {
-                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({
-                                    stringValue =
-                                    "me"
-                                }),
+                                [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule
+                                    .SimpleBaseString:new({
+                                        stringValue =
+                                        "me"
+                                    }),
                             },
                             methods = {
                                 [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = Method:new({
@@ -1831,7 +1921,8 @@ describe("Interpreter tests", function()
                     },
                     staticFields = {},
                     instanceFields = {
-                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString:new({ stringValue = "me" }),
+                        [BuiltinClassModule.Symbol:new({ name = "name" }):asKey()] = BuiltinClassModule.SimpleBaseString
+                            :new({ stringValue = "me" }),
                         [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Null:new({}),
                     },
                     methods = {

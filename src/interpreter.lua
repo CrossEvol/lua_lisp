@@ -174,18 +174,25 @@ function Interpreter:visit(ast)
     return result
 end
 
----useless
+---@deprecated
 ---@param ast AST
 ---@return T
 function Interpreter:visitAST(ast)
     return self:visit(ast)
 end
 
----useless
+---@deprecated
 ---@param expr Expr
 ---@return T
 function Interpreter:visitExpr(expr)
     return self:visit(expr)
+end
+
+---@deprecated
+---@param optionalAST OptionalAST
+---@return T
+function Interpreter:visitOptionalAST(optionalAST)
+    return optionalAST.value
 end
 
 ---@param empty Empty
@@ -556,7 +563,7 @@ function Interpreter:visitFunctionCall(funcCall)
                     self:toggleDeclaring()
                     local varName = self:visitVariable(formalParams[i].name)
                     self:toggleDeclaring()
-                    local varValue = self:visitExpr(actualParams[i])
+                    local varValue = self:visit(actualParams[i])
                     self.localVars:add(varName, varValue)
                 end
                 local result = BuiltinClassModule.Null:new({})

@@ -66,6 +66,7 @@ describe("Parser tests", function()
 
     it("Variable AST", function()
         TEST_AST([[a]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }))
+        TEST_AST([[#'a]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a' }) }))
         TEST_AST([[a1]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = 'a1' }) }))
         TEST_AST([[__a__]], AST.Variable:new({ value = BuiltinClassModule.Symbol:new({ name = '__a__' }) }))
     end)

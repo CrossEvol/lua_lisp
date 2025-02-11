@@ -740,8 +740,15 @@ function Parser:factor()
             return type
         end
     elseif token.type == TokenType.SHARP then
-        local vector = self:sharpVector()
-        return vector
+        if self:peek().type == TokenType.SINGLE_QUOTE then
+            self:consume(TokenType.SHARP)
+            self:consume(TokenType.SINGLE_QUOTE)
+            local variable = self:variable()
+            return variable
+        else
+            local vector = self:sharpVector()
+            return vector
+        end
     elseif token.type == TokenType.ID then
         local variable = self:variable()
         return variable

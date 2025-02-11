@@ -146,10 +146,8 @@ local AST = require("src.ast")
 local BuiltinClassModule = require("src.builtin_class")
 
 local text = [[
-    (defclass person ()((age :initarg :age :accessor age)))
-    (defmethod grow ((p person) a b)(+ (age p) a b))
-    (defvar p1 (make-instance 'person :age 10))
-    (grow p1 1 2)
+                (defun add (a b)(+ a b))
+                (apply 'add '(1 2))
 ]]
 
 local lexer = Lexer:new({ text = text })
@@ -172,7 +170,11 @@ local expects = {
         methods = {
             [BuiltinClassModule.Symbol:new({ name = "age" }):asKey()] = BuiltinClassModule.Method:new({
                 isAccessorMethod = true,
-                func = BuiltinClassModule.BuiltinFunction:new({ name = "slot-value", func = NativeMethod:find("slot-value") }),
+                func = BuiltinClassModule.BuiltinFunction:new({
+                    name = "slot-value",
+                    func = NativeMethod:find(
+                        "slot-value")
+                }),
                 target = BuiltinClassModule.Symbol:new({ name = "age" }),
             }),
         },

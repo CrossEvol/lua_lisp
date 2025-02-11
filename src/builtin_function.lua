@@ -851,8 +851,10 @@ local __char__function = function(interpreter, params)
     if intValue >= #stringValue then
         error(InterpreterError:new({}))
     end
-    local result = BuiltinClassModule.Character:new({ chars = [[#\]] ..
-    string.sub(stringValue, intValue + 1, intValue + 1) })
+    local result = BuiltinClassModule.Character:new({
+        chars = [[#\]] ..
+            string.sub(stringValue, intValue + 1, intValue + 1)
+    })
     return result
 end
 
@@ -1266,8 +1268,10 @@ local __subseq__function = function(interpreter, params)
         if leftValue > rightValue or leftValue < 0 or leftValue >= #stringValue or rightValue >= #stringValue then
             error(InterpreterError:new({}))
         end
-        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.sub(stringValue, leftValue + 1,
-            rightValue + 1) })
+        local result = BuiltinClassModule.SimpleBaseString:new({
+            stringValue = string.sub(stringValue, leftValue + 1,
+                rightValue + 1)
+        })
         return result
     else
         error(InterpreterError:new({}))
@@ -1380,8 +1384,10 @@ local __remove__function = function(interpreter, params)
         if intValue >= string.len(stringValue) then
             error(InterpreterError:new({}))
         end
-        local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.gsub(stringValue, ch, "",
-            intValue + 1) })
+        local result = BuiltinClassModule.SimpleBaseString:new({
+            stringValue = string.gsub(stringValue, ch, "",
+                intValue + 1)
+        })
         return result
     else
         error(InterpreterError:new({}))
@@ -1868,18 +1874,96 @@ local __inspect_function = function(interpreter, params)
         error(InterpreterError:new({}))
     end
     local result = interpreter:visit(params[1])
-    return result:asLayout()
+    return result:asLayout(interpreter, 0)
 end
 
 ---@param interpreter Interpreter
 ---@param  params table<Expr, integer>
 ---@return T
-local _class_of_function = function(interpreter, params)
+local __class_of_function = function(interpreter, params)
     if #params ~= 1 then
         error(InterpreterError:new({}))
     end
     local result = interpreter:visit(params[1])
     return result:asClass()
+end
+
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __funcall_function = function(interpreter, params)
+    if #params == 0 then
+        error(InterpreterError:new({}))
+    end
+    local variable = params[1]
+    ---@cast variable Variable
+    if NativeMethod:exists(variable.value.name) then
+        local nativeMethodName = variable.value.name
+        table.remove(params, 1)
+        local result = interpreter:visit(AST.FunctionCall:new({
+            value = BuiltinClassModule.BuiltinFunction:new({
+                func = NativeMethod:find(nativeMethodName),
+                name = string.lower(nativeMethodName)
+            }),
+            params = params
+        }))
+        return result
+    else
+        table.remove(params, 1)
+        local result = interpreter:visit(AST.FunctionCall:new({ value = variable.value, params = params }))
+        return result
+    end
+end
+
+---@param interpreter Interpreter
+---@param  params table<integer, Expr>
+---@return T
+local __apply_function = function(interpreter, params)
+    if #params ~= 2 then
+        error(InterpreterError:new({}))
+    end
+    local variable = params[1]
+    ---@cast variable Variable
+    if NativeMethod:exists(variable.value.name) then
+        local nativeMethodName = variable.value.name
+        local list = interpreter:visit(params[2])
+        if list.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CONS then
+            error(InterpreterError:new({}))
+        end
+        ---@cast list Cons
+        local newParams = {}
+        for _, value in pairs(list.elements) do
+            if value.classType == BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
+                table.insert(newParams, value)
+            else
+                table.insert(newParams, AST.OptionalAST:new({ value = value }))
+            end
+        end
+        local result = interpreter:visit(AST.FunctionCall:new({
+            value = BuiltinClassModule.BuiltinFunction:new({
+                func = NativeMethod:find(nativeMethodName),
+                name = string.lower(nativeMethodName),
+            }),
+            params = newParams,
+        }))
+        return result
+    else
+        local list = interpreter:visit(params[2])
+        if list.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CONS then
+            error(InterpreterError:new({}))
+        end
+        ---@cast list Cons
+        local newParams = {}
+        for _, value in pairs(list.elements) do
+            if value.classType == BuiltinClassModule.BUILT_IN_CLASS.SYMBOL then
+                table.insert(newParams, value)
+            else
+                table.insert(newParams, AST.OptionalAST:new({ value = value }))
+            end
+        end
+        local result = interpreter:visit(AST.FunctionCall:new({ value = variable.value, params = newParams }))
+        return result
+    end
 end
 
 ---@class BUILT_IN_FUNCTION
@@ -1891,16 +1975,16 @@ local BUILT_IN_FUNCTION = {
     ["setf"]              = __setf__function,
     ["setq"]              = __setq__function,
     ["format"]            = function(...) end,
-    ["class-of"]          = _class_of_function,
+    ["class-of"]          = __class_of_function,
     ["type-of"]           = __type_of__function,
     ["find-class"]        = function(...) end,
     ["class-name"]        = function(...) end,
     ["typep"]             = function(...) end,
     ["cons"]              = __cons__function,
     ["vector"]            = __vector__function,
-    ["lambda"]            = function(...) end, -- skip
-    ["funcall"]           = function(...) end,
-    ["apply"]             = function(...) end,
+    ["lambda"]            = function(...) end, ---@deprecated
+    ["funcall"]           = __funcall_function,
+    ["apply"]             = __apply_function,
     ["list"]              = __list__function,
     ["print"]             = __print__function,
     ["+"]                 = __add__function,
@@ -1916,15 +2000,15 @@ local BUILT_IN_FUNCTION = {
     ["eq"]                = __eq__function,
     ["eql"]               = __eql__function,
     ["equal"]             = __equal__function,
-    ["map"]               = function(...) end, -- skip
-    ["mapcar"]            = function(...) end, -- skip
+    ["map"]               = function(...) end, ---@deprecated
+    ["mapcar"]            = function(...) end, ---@deprecated
     ["make-hash-table"]   = __make_hash_table__function,
     ["gethash"]           = __gethash_function,
     ["remhash"]           = __remhash_function,
     ["maphash"]           = function(...) end,
     ["append"]            = __append__function,
-    ["car"]               = __car_function, -- skip
-    ["cdr"]               = __cdr_function, -- skip
+    ["car"]               = __car_function, ---@deprecated
+    ["cdr"]               = __cdr_function, ---@deprecated
     ["find"]              = __find_function,
     ["first"]             = __first_function,
     ["last"]              = __last_function,
