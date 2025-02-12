@@ -146,15 +146,10 @@ local AST = require("src.ast")
 local BuiltinClassModule = require("src.builtin_class")
 
 local text = [[
-                    (defparameter m (make-hash-table))
-                    (setf (gethash 'a m) 1)
-                    (setf (gethash 'b m) 2)
-                    (defvar sum 0)
-                    (defvar l1 (lambda (key val)
-                             (setf sum (+ sum val))))
-
-                    (maphash l1 m)
-                    sum
+                        (defclass parent ()())
+                        (defclass child (parent)())
+                        (defvar paa (make-instance 'child))
+                        (typep paa 'tt)
 ]]
 
 local lexer = Lexer:new({ text = text })
@@ -164,13 +159,33 @@ local ast = parser:parse()
 local results = interpreter:interpret(ast)
 print(results)
 local expects = {
-    BuiltinClassModule.Symbol:new({ name = "m" }),
-    BuiltinClassModule.FixNum:new({ intValue = 1 }),
-    BuiltinClassModule.FixNum:new({ intValue = 2 }),
-    BuiltinClassModule.Symbol:new({ name = "sum" }),
-    BuiltinClassModule.Symbol:new({ name = "l1" }),
-    BuiltinClassModule.Null:new({}),
-    BuiltinClassModule.FixNum:new({ intValue = 3 })
+    BuiltinClassModule.StandardClass:new({
+        name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+        initArgs = {},
+        superClassRefs = {},
+        staticFields = {},
+        instanceFields = {},
+        methods = {},
+    }),
+    BuiltinClassModule.StandardClass:new({
+        name = BuiltinClassModule.Symbol:new({ name = "child" }),
+        initArgs = {},
+        superClassRefs = {
+            BuiltinClassModule.StandardClass:new({
+                name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+                initArgs = {},
+                superClassRefs = {},
+                staticFields = {},
+                instanceFields = {},
+                methods = {},
+            })
+        },
+        staticFields = {},
+        instanceFields = {},
+        methods = {},
+    }),
+    BuiltinClassModule.Symbol:new({ name = "pa" }),
+    BuiltinClassModule.True:new({})
 }
 local flag    = true
 for i = 1, #results do

@@ -64,14 +64,17 @@ local BUILT_IN_CLASS = {
 ---| '"SIMPLE-VECTOR"'
 ---| '"HASH-TABLE"'
 
+---classRef only be nil on classes declared prior to StandardClass
 ---baseHashTable means table allocated in the globals, each value inside HashTable.entries should have a reference to baseHashTable
 ---@class T
+---@field classRef StandardClass | nil
 ---@field classType BUILT_IN_CLASS.Type
 ---@field superClassType BUILT_IN_CLASS.Type
 ---@field isStructureObject boolean
 ---@field extras table<integer, T>
 T = {
     classType = BUILT_IN_CLASS.T,
+    classRef = nil,
     superClassType = BUILT_IN_CLASS.T,
     isStructureObject = false,
     extras = {},
@@ -146,7 +149,10 @@ end
 
 ---@class ValueType : T
 ---@field typeName string
-ValueType = T:new({ classType = BUILT_IN_CLASS.VALUE_TYPE, typeName = "" })
+ValueType = T:new({
+    classType = BUILT_IN_CLASS.VALUE_TYPE,
+    typeName = ""
+})
 
 ---@param o any
 ---@return ValueType
@@ -233,42 +239,6 @@ function Symbol.__eq(obj1, obj2)
     return obj1.name == obj2.name
 end
 
----@class Null : T
-Null = T:new({ classType = BUILT_IN_CLASS.NULL, })
-
----@param obj1 Null
----@param obj2 Null
-function Null.__eq(obj1, obj2)
-    if tostring(obj1) == tostring(obj2) then
-        return true
-    end
-    return obj1.classType == obj2.classType
-end
-
----@return SimpleBaseString
-function Null:asClass()
-    return T.asClass(self)
-end
-
----@return ValueType
-function Null:asType()
-    return ValueType:new({ typeName = "NULL" })
-end
-
----@return string
-function Null:asString()
-    return "NIL"
-end
-
----for inspect
----@return SimpleBaseString
-function Null:asLayout()
-    return SimpleBaseString:new({ stringValue = "{}" })
-end
-
----@class StructureObject : T
-StructureObject = T:new({ classType = BUILT_IN_CLASS.STRUCTURE_OBJECT, isStructureObject = true })
-
 ---@class StandardClass : T
 ---@field name Symbol
 ---@field superClassRefs table<integer, StandardClass>
@@ -276,7 +246,7 @@ StructureObject = T:new({ classType = BUILT_IN_CLASS.STRUCTURE_OBJECT, isStructu
 ---@field staticFields table<Symbol , T>
 ---@field instanceFields table<Symbol, T>
 ---@field methods table<string, T>
-StandardClass   = T:new({
+StandardClass = T:new({
     classType = BUILT_IN_CLASS.STANDARD_CLASS,
     name = Symbol:new({}),
     superClassRefs = {},
@@ -345,7 +315,7 @@ end
 
 ---@return string
 function StandardClass:asString()
-    error({})
+    return self:asClass()
 end
 
 ---@return string
@@ -358,7 +328,7 @@ end
 
 ---@return ValueType
 function StandardClass:asType()
-    error({})
+    return ValueType:new({ typeName = self.name.name })
 end
 
 ---for inspect
@@ -422,6 +392,175 @@ function StandardClass.__eq(obj1, obj2)
     return true
 end
 
+---@param classRef StandardClass
+function StandardClass:extends(classRef)
+    if classRef == self then
+        return true
+    end
+    for _, value in pairs(self.superClassRefs) do
+        local flag = value:extends(classRef)
+        if flag then
+            return true
+        end
+    end
+
+    return false
+end
+
+local tClass = StandardClass:new({
+    name = Symbol:new({ name = "tt" }),
+})
+local numberClass = StandardClass:new({
+    name = Symbol:new({ name = "number" }),
+    superClassRefs = { tClass },
+})
+local integerClass = StandardClass:new({
+    name = Symbol:new({
+        name = "integer",
+    }),
+    superClassRefs = { numberClass },
+})
+local fixNumClass = StandardClass:new({
+    name = Symbol:new({
+        name = "fixnum",
+
+    }),
+    superClassRefs = { integerClass },
+})
+local floatClass = StandardClass:new({
+    name = Symbol:new({ name = "float", }),
+    superClassRefs = { numberClass },
+})
+local singleFloatClass = StandardClass:new({
+    name = Symbol:new({ name = "single-float", }),
+    superClassRefs = { floatClass },
+})
+local rationalClass = StandardClass:new({
+    name = Symbol:new({ name = "rational", }),
+    superClassRefs = { numberClass },
+})
+local characterClass = StandardClass:new({
+    name = Symbol:new({ name = "character" }),
+    superClassRefs = { tClass },
+})
+local stringClass = StandardClass:new({
+    name = Symbol:new({ name = "string" }),
+    superClassRefs = { tClass },
+})
+local simpleStringClass = StandardClass:new({
+    name = Symbol:new({ name = "simple-string" }),
+    superClassRefs = { stringClass },
+})
+local listClass = StandardClass:new({
+    name = Symbol:new({ name = "list" }),
+    superClassRefs = { tClass },
+})
+local consClass = StandardClass:new({
+    name = Symbol:new({ name = "cons", }),
+    superClassRefs = { listClass },
+})
+local vectorClass = StandardClass:new({
+    name = Symbol:new({ name = "vector", }),
+    superClassRefs = { listClass },
+})
+local simpleVectorClass = StandardClass:new({
+    name = Symbol:new({ name = "simple-vector" }),
+    superClassRefs = { vectorClass },
+})
+local functionClass = StandardClass:new({
+    name = Symbol:new({ name = "function" }),
+    superClassRefs = { tClass },
+})
+local lambdaClass = StandardClass:new({
+    name = Symbol:new({ name = "lambda" }),
+    superClassRefs = { functionClass },
+})
+local methodClass = StandardClass:new({
+    name = Symbol:new({ name = "method" }),
+    superClassRefs = { functionClass },
+})
+local hashTableClass = StandardClass:new({
+    name = Symbol:new({ name = "hash-table" }),
+    superClassRefs = { tClass },
+})
+local nilClass = StandardClass:new({
+    name = Symbol:new({ name = "nil" }),
+    superClassRefs = { tClass },
+})
+
+local InnerClasses = {
+    ["tt"] = tClass,
+    ["number"] = numberClass,
+    ["integer"] = integerClass,
+    ["fixnum"] = fixNumClass,
+    ["float"] = floatClass,
+    ["single-float"] = singleFloatClass,
+    ["rational"] = rationalClass,
+    ["character"] = characterClass,
+    ["string"] = stringClass,
+    ["simple-string"] = simpleStringClass,
+    ["list"] = listClass,
+    ["cons"] = consClass,
+    ["vector"] = vectorClass,
+    ["simple-vector"] = simpleVectorClass,
+    ["function"] = functionClass,
+    ["lambda"] = lambdaClass,
+    ["method"] = methodClass,
+    ["hash-table"] = hashTableClass,
+    ["nil"] = nilClass,
+}
+
+---@class InnerClass
+InnerClass = {}
+
+---@param symbolName string
+function InnerClass:find(symbolName)
+    return InnerClasses[string.lower(symbolName)]
+end
+
+---@class Null : T
+Null = T:new({
+    classType = BUILT_IN_CLASS.NULL,
+    classRef = nilClass,
+})
+
+---@param obj1 Null
+---@param obj2 Null
+function Null.__eq(obj1, obj2)
+    if tostring(obj1) == tostring(obj2) then
+        return true
+    end
+    return obj1.classType == obj2.classType
+end
+
+---@return SimpleBaseString
+function Null:asClass()
+    return T.asClass(self)
+end
+
+---@return ValueType
+function Null:asType()
+    return ValueType:new({ typeName = "NULL" })
+end
+
+---@return string
+function Null:asString()
+    return "NIL"
+end
+
+---for inspect
+---@return SimpleBaseString
+function Null:asLayout()
+    return SimpleBaseString:new({ stringValue = "{}" })
+end
+
+---@class StructureObject : T
+StructureObject = T:new({
+    classType = BUILT_IN_CLASS.STRUCTURE_OBJECT,
+    classRef = tClass,
+    isStructureObject = true
+})
+
 ---@class SlotValue : T
 ---@field name T
 ---@field accessor T
@@ -435,6 +574,7 @@ end
 ---@field initform T
 SlotValue = T:new({
     classType = BUILT_IN_CLASS.SLOT_VALUE,
+    classRef = tClass,
     name = Null:new({}),
     accessor = Null:new({}),
     accessorSymbol = Null:new({}),
@@ -461,7 +601,7 @@ end
 ---@field fields table<Symbol, T>
 StandardInstance = T:new({
     classType = BUILT_IN_CLASS.STANDARD_INSTANCE,
-    classRef = StandardClass,
+    classRef = tClass,
     fields = {},
 })
 
@@ -554,8 +694,17 @@ function StandardInstance.__eq(obj1, obj2)
     return true
 end
 
+---@param classRef StandardClass
+---@return boolean
+function StandardInstance:existsClass(classRef)
+    return self.classRef:extends(classRef)
+end
+
 ---@class True : T
-True = T:new({ classType = BUILT_IN_CLASS.TRUE, })
+True = T:new({
+    classType = BUILT_IN_CLASS.TRUE,
+    classRef = tClass,
+})
 
 ---@param obj1 True
 ---@param obj2 True
@@ -606,6 +755,7 @@ end
 ---@field func function
 Function = T:new({
     classType = BUILT_IN_CLASS.FUNCTION,
+    classRef = functionClass,
     superClassType = BUILT_IN_CLASS.FUNCTION,
     func = function() end
 })
@@ -673,6 +823,7 @@ end
 ---@field expressions table<Expr, integer>
 UserDefinedFunction = T:new({
     classType = BUILT_IN_CLASS.USER_DEFINED_FUNCTION,
+    classRef = functionClass,
     superClassType = BUILT_IN_CLASS.FUNCTION,
     func = nil,
     params = {},
@@ -747,6 +898,7 @@ end
 ---@field name string
 BuiltinFunction = Function:new({
     classType = BUILT_IN_CLASS.BUILT_IN_FUNCTION,
+    classRef = functionClass,
     superClassType = BUILT_IN_CLASS.FUNCTION,
     name = "",
 })
@@ -799,6 +951,7 @@ end
 ---@field expressions table<Expr, integer>
 LambdaFunction = T:new({
     classType = BUILT_IN_CLASS.LAMBDA_FUNCTION,
+    classRef = lambdaClass,
     superClassType = BUILT_IN_CLASS.FUNCTION,
     func = nil,
     params = {},
@@ -871,6 +1024,7 @@ end
 ---@class GenericFunction : T
 GenericFunction = T:new({
     classType = BUILT_IN_CLASS.GENERIC_FUNCTION,
+    classRef = functionClass,
     superClassType = BUILT_IN_CLASS.FUNCTION,
 })
 
@@ -881,6 +1035,7 @@ GenericFunction = T:new({
 ---@field target Symbol
 Method          = UserDefinedFunction:new({
     classType        = BUILT_IN_CLASS.METHOD,
+    classRef         = methodClass,
     superClassType   = BUILT_IN_CLASS.FUNCTION,
     name             = Symbol:new({}),
     isAccessorMethod = false,
@@ -939,11 +1094,19 @@ function Method:asLayout(interpreter, level)
 end
 
 ---@class Number : T
-Number = T:new({ classType = BUILT_IN_CLASS.NUMBER, superClassType = BUILT_IN_CLASS.NUMBER })
+Number = T:new({
+    classType = BUILT_IN_CLASS.NUMBER,
+    classRef = numberClass,
+    superClassType = BUILT_IN_CLASS.NUMBER,
+})
 
 ---@class FixNum : T
 ---@field intValue integer
-FixNum = Number:new({ classType = BUILT_IN_CLASS.FIX_NUM, intValue = 0 })
+FixNum = Number:new({
+    classType = BUILT_IN_CLASS.FIX_NUM,
+    classRef = fixNumClass,
+    intValue = 0,
+})
 
 ---@param obj1 FixNum
 ---@param obj2 FixNum
@@ -1149,7 +1312,11 @@ end
 
 ---@class SingleFloat : T
 ---@field floatValue number
-SingleFloat = Number:new({ classType = BUILT_IN_CLASS.SINGLE_FLOAT, floatValue = 0.0 })
+SingleFloat = Number:new({
+    classType = BUILT_IN_CLASS.SINGLE_FLOAT,
+    classRef = singleFloatClass,
+    floatValue = 0.0,
+})
 
 ---@param obj1 SingleFloat
 ---@param obj2 FixNum | SingleFloat | Rational
@@ -1317,7 +1484,12 @@ end
 ---@class Rational : T
 ---@field numerator integer
 ---@field denominator integer
-Rational = Number:new({ classType = BUILT_IN_CLASS.RATIONAL, numerator = 0, denominator = 1 })
+Rational = Number:new({
+    classType = BUILT_IN_CLASS.RATIONAL,
+    classRef = rationalClass,
+    numerator = 0,
+    denominator = 1,
+})
 
 ---@param o any
 ---@return Rational
@@ -1511,7 +1683,11 @@ end
 
 ---@class Character : T
 ---@field chars string
-Character = T:new({ classType = BUILT_IN_CLASS.CHARACTER, chars = "" })
+Character = T:new({
+    classType = BUILT_IN_CLASS.CHARACTER,
+    classRef = characterClass,
+    chars = "",
+})
 
 ---@param obj1 Character
 ---@param obj2 Character
@@ -1562,7 +1738,11 @@ end
 
 ---@class SimpleBaseString : T
 ---@field stringValue string
-SimpleBaseString = StructureObject:new({ classType = BUILT_IN_CLASS.SIMPLE_BASE_STRING, stringValue = '' })
+SimpleBaseString = StructureObject:new({
+    classType = BUILT_IN_CLASS.SIMPLE_BASE_STRING,
+    classRef = simpleStringClass,
+    stringValue = '',
+})
 
 ---@param o any
 ---@return SimpleBaseString
@@ -1622,7 +1802,12 @@ end
 
 ---@class List : T
 ---@field elements table<integer ,T>
-List = StructureObject:new({ classType = BUILT_IN_CLASS.LIST, superClassType = BUILT_IN_CLASS.LIST, elements = {} })
+List = StructureObject:new({
+    classType = BUILT_IN_CLASS.LIST,
+    classRef = listClass,
+    superClassType = BUILT_IN_CLASS.LIST,
+    elements = {},
+})
 
 ---@param obj1 List
 ---@param obj2 List
@@ -1693,7 +1878,10 @@ function List:asLayout(interpreter, level)
 end
 
 ---@class Cons : List
-Cons = List:new({ classType = BUILT_IN_CLASS.CONS })
+Cons = List:new({
+    classType = BUILT_IN_CLASS.CONS,
+    classRef = consClass,
+})
 
 ---@param obj1 Cons
 ---@param obj2 Cons
@@ -1737,7 +1925,10 @@ function Cons:asLayout(interpreter, level)
 end
 
 ---@class SimpleVector : List
-SimpleVector = List:new({ classType = BUILT_IN_CLASS.SIMPLE_VECTOR })
+SimpleVector = List:new({
+    classType = BUILT_IN_CLASS.SIMPLE_VECTOR,
+    classRef = simpleVectorClass,
+})
 
 ---@param obj1 SimpleVector
 ---@param obj2 SimpleVector
@@ -1782,7 +1973,11 @@ end
 
 ---@class HashTable : StructureObject
 ---@field entries table<string, T>
-HashTable = StructureObject:new({ classType = BUILT_IN_CLASS.HASH_TABLE, entries = {} })
+HashTable = StructureObject:new({
+    classType = BUILT_IN_CLASS.HASH_TABLE,
+    classRef = hashTableClass,
+    entries = {},
+})
 
 ---@param obj1 HashTable
 ---@param obj2 HashTable
@@ -1857,6 +2052,7 @@ end
 
 return {
     T = T,
+    InnerClass = InnerClass,
     ValueType = ValueType,
     Number = Number,
     FixNum = FixNum,

@@ -33,3 +33,5 @@ but in here, it will be evaluated into (list a b c d e), which means a / b / c /
 ## CLOS 
 - give up implementing `defgeneric`
 - give up implementing `with-slots`
+
+## use `tt` as the top-level super class, not the `t`

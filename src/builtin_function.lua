@@ -11,7 +11,6 @@ local BUILT_IN_FUNCTION_NAME_SET = {
     ["make-instance"]     = 'make-instance',
     ["inspect"]           = 'inspect',
     ["slot-value"]        = 'slot-value',
-    ["with-slots"]        = 'with-slots',
     ["setf"]              = 'setf',
     ["setq"]              = 'setq',
     ["format"]            = 'format',
@@ -749,6 +748,7 @@ local __make_string__function = function(interpreter, params)
         if number.classType ~= BuiltinClassModule.BUILT_IN_CLASS.FIX_NUM then
             error(InterpreterError:new({}))
         end
+        ---@cast number FixNum
         interpreter:toggleDeclaring()
         local initialElement = interpreter:visit(params[2])
         interpreter:toggleDeclaring()
@@ -759,7 +759,7 @@ local __make_string__function = function(interpreter, params)
         if char.classType ~= BuiltinClassModule.BUILT_IN_CLASS.CHARACTER then
             error(InterpreterError:new({}))
         end
-        ---@cast number FixNum
+        ---@cast char Character
         return BuiltinClassModule.SimpleBaseString:new({ stringValue = string.rep(char.chars:sub(3, 3), number.intValue) })
     end
 
@@ -1839,15 +1839,6 @@ local __slot_value_function = function(interpreter, params)
     return result
 end
 
----@deprecated
----@param interpreter Interpreter
----@param  params table<Expr, integer>
----@return T
-local __with_slots_function = function(interpreter, params)
-    -- TODO:
-    return {}
-end
-
 ---@param interpreter Interpreter
 ---@param params table<Expr, integer>
 ---@return T
@@ -2004,12 +1995,60 @@ local __maphash_function = function(interpreter, params)
     return BuiltinClassModule.Null:new({})
 end
 
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __typep_function = function(interpreter, params)
+    if #params ~= 2 then
+        error(InterpreterError:new({}))
+    end
+
+    local classVariable = params[2]
+    if classVariable.astType ~= AST.AST_TYPE.VARIABLE then
+        error(InterpreterError:new({}))
+    end
+    ---@cast classVariable Variable
+
+    local innerClass = BuiltinClassModule.InnerClass:find(classVariable.value.name)
+    local isInnerClass = innerClass ~= nil
+    if isInnerClass then
+        local classRef = innerClass
+        if classRef.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+            return BuiltinClassModule.Null:new({})
+        end
+        ---@cast classRef StandardClass
+
+        local instance = interpreter:visit(params[1])
+        if instance.classRef:extends(classRef) then
+            return BuiltinClassModule.True:new({})
+        else
+            return BuiltinClassModule.Null:new({})
+        end
+    else
+        local classRef = interpreter:visit(classVariable)
+        if classRef.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+            return BuiltinClassModule.Null:new({})
+        end
+        ---@cast classRef StandardClass
+
+        local instance = interpreter:visit(params[1])
+        if instance.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_INSTANCE then
+            error(InterpreterError:new({}))
+        end
+        ---@cast instance StandardInstance
+        if instance:existsClass(classRef) then
+            return BuiltinClassModule.True:new({})
+        else
+            return BuiltinClassModule.Null:new({})
+        end
+    end
+end
+
 ---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
     ["make-instance"]     = __make_instance_function,
     ["inspect"]           = __inspect_function,
     ["slot-value"]        = __slot_value_function,
-    ["with-slots"]        = __with_slots_function,
     ["setf"]              = __setf__function,
     ["setq"]              = __setq__function,
     ["format"]            = function(...) end,
@@ -2017,7 +2056,7 @@ local BUILT_IN_FUNCTION = {
     ["type-of"]           = __type_of__function,
     ["find-class"]        = function(...) end,
     ["class-name"]        = function(...) end,
-    ["typep"]             = function(...) end,
+    ["typep"]             = __typep_function,
     ["cons"]              = __cons__function,
     ["vector"]            = __vector__function,
     ["lambda"]            = function(...) end, ---@deprecated
