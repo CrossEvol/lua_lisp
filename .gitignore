@@ -42,3 +42,8 @@ luac.out
 # IDE
 .vscode/settings.json
 
+# luarocks
+lua_modules
+.luarocks
+lua.bat
+luarocks.bat
