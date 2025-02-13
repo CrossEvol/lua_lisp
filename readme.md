@@ -35,3 +35,5 @@ but in here, it will be evaluated into (list a b c d e), which means a / b / c /
 - give up implementing `with-slots`
 
 ## use `tt` as the top-level super class, not the `t`
+
+## `subtypep` only apply for type comparison

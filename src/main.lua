@@ -146,10 +146,7 @@ local AST = require("src.ast")
 local BuiltinClassModule = require("src.builtin_class")
 
 local text = [[
-                        (defclass parent ()())
-                        (defclass child (parent)())
-                        (defvar paa (make-instance 'child))
-                        (typep paa 'tt)
+(subtypep 'lambda 'tt)
 ]]
 
 local lexer = Lexer:new({ text = text })

@@ -1508,6 +1508,116 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.Null:new({})
             )
         end)
+        it("subtypep", function()
+            TEST_INTERPRETER_ERROR([[(subtypep)]])
+            TEST_INTERPRETER_ERROR([[(subtypep 'integer)]])
+            TEST_INTERPRETER([[(subtypep 'integer 'number)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'number 'integer)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'integer 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'single-float 'float)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'single-float 'number)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'number 'single-float)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'single-float 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'rational 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'rational 'number)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'number 'rational)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'character 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'string 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'simple-string 'string)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'string 'simple-string)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'simple-string 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'list 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'cons 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'cons 'list)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'list 'cons)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'vector 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'vector 'list)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'list 'vector)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'simple-vector 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'simple-vector 'vector)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'function 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'method 'function)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[(subtypep 'function 'method)]], BuiltinClassModule.Null:new({}))
+            TEST_INTERPRETER([[(subtypep 'hash-table 'tt)]], BuiltinClassModule.True:new({}))
+            TEST_INTERPRETER([[
+                        (defclass parent ()())
+                        (defclass child (parent)())
+                        (subtypep 'child 'parent)
+                ]],
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "child" }),
+                    initArgs = {},
+                    superClassRefs = {
+                        BuiltinClassModule.StandardClass:new({
+                            name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+                            initArgs = {},
+                            superClassRefs = {},
+                            staticFields = {},
+                            instanceFields = {},
+                            methods = {},
+                        })
+                    },
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.True:new({})
+            )
+            TEST_INTERPRETER([[
+                        (defclass parent ()())
+                        (defclass child (parent)())
+                        (subtypep 'parent 'child)
+                ]],
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "child" }),
+                    initArgs = {},
+                    superClassRefs = {
+                        BuiltinClassModule.StandardClass:new({
+                            name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+                            initArgs = {},
+                            superClassRefs = {},
+                            staticFields = {},
+                            instanceFields = {},
+                            methods = {},
+                        })
+                    },
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.Null:new({})
+            )
+            TEST_INTERPRETER([[
+                        (defclass parent ()())
+                        (subtypep 'parent 'tt)
+                ]],
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.Null:new({})
+            )
+        end)
     end)
     context("FlowControl", function()
         it("IfCall", function()

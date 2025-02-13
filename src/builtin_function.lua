@@ -2044,6 +2044,74 @@ local __typep_function = function(interpreter, params)
     end
 end
 
+---@param interpreter Interpreter
+---@param  params table<Expr, integer>
+---@return T
+local __subtypep_function = function(interpreter, params)
+    if #params ~= 2 then
+        error(InterpreterError:new({}))
+    end
+
+    local derivedClassVariable = params[1]
+    if derivedClassVariable.astType ~= AST.AST_TYPE.VARIABLE then
+        error(InterpreterError:new({}))
+    end
+    ---@cast derivedClassVariable Variable
+
+    local baseClassVariable = params[2]
+    if baseClassVariable.astType ~= AST.AST_TYPE.VARIABLE then
+        error(InterpreterError:new({}))
+    end
+    ---@cast baseClassVariable Variable
+
+    local derivedClass = BuiltinClassModule.InnerClass:find(derivedClassVariable.value.name)
+    local isDerivedClassInner = derivedClass ~= nil
+    if isDerivedClassInner then
+        local derivedClassRef = derivedClass
+        if derivedClassRef.classType == BuiltinClassModule.BUILT_IN_CLASS.NULL then
+            return BuiltinClassModule.Null:new({})
+        end
+
+        local baseClassRef = BuiltinClassModule.InnerClass:find(baseClassVariable.value.name)
+        local isBaseClassInner = baseClassRef ~= nil
+
+        if not isBaseClassInner then
+            return BuiltinClassModule.Null:new({})
+        else
+            return derivedClassRef:extends(baseClassRef)
+                and
+                BuiltinClassModule.True:new({})
+                or
+                BuiltinClassModule.Null:new({})
+        end
+    else
+        local baseClass = BuiltinClassModule.InnerClass:find(baseClassVariable.value.name)
+        local isBaseClassInner = baseClass ~= nil
+
+        if isBaseClassInner then
+            return BuiltinClassModule.Null:new({})
+        else
+            local derivedClassRef = interpreter:visit(params[1])
+            if derivedClassRef.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_CLASS then
+                error(InterpreterError:new({}))
+            end
+            ---@cast derivedClassRef StandardClass
+
+            local baseClassRef = interpreter:visit(params[2])
+            if baseClassRef.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_CLASS then
+                error(InterpreterError:new({}))
+            end
+            ---@cast baseClassRef StandardClass
+
+            return derivedClassRef:extends(baseClassRef)
+                and
+                BuiltinClassModule.True:new({})
+                or
+                BuiltinClassModule.Null:new({})
+        end
+    end
+end
+
 ---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
     ["make-instance"]     = __make_instance_function,
@@ -2101,7 +2169,7 @@ local BUILT_IN_FUNCTION = {
     ["floor"]             = __floor__function,
     ["round"]             = __round__function,
     ["truncate"]          = __truncate__function,
-    ["subtypep"]          = function(...) end,
+    ["subtypep"]          = __subtypep_function,
     ["make-string"]       = __make_string__function,
     ["string-upcase"]     = __string_upcase__function,
     ["string-downcase"]   = __string_downcase__function,
