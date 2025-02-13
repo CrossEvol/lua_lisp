@@ -159,7 +159,7 @@ local __make_hash_table__function = function(interpreter)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __list__function = function(interpreter, params)
     if #params == 0 then
@@ -176,7 +176,7 @@ local __list__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __cons__function = function(interpreter, params)
     if #params ~= 2 then
@@ -193,7 +193,7 @@ local __cons__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __vector__function = function(interpreter, params)
     local elements = {}
@@ -206,7 +206,7 @@ local __vector__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __add__function = function(interpreter, params)
     local sum = BuiltinClassModule.FixNum:new({ intValue = 0 })
@@ -222,7 +222,7 @@ local __add__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __minus__function = function(interpreter, params)
     if #params == 0 then
@@ -244,7 +244,7 @@ local __minus__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __multiply__function = function(interpreter, params)
     local production = BuiltinClassModule.FixNum:new({ intValue = 1 })
@@ -260,7 +260,7 @@ local __multiply__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __divide__function = function(interpreter, params)
     if #params == 0 then
@@ -282,7 +282,7 @@ local __divide__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __eq_operator__function = function(interpreter, params)
     local flag = true
@@ -317,7 +317,7 @@ local __eq_operator__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __not_eq_operator__function = function(interpreter, params)
     local flag = true
@@ -352,7 +352,7 @@ local __not_eq_operator__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __eq__function = function(interpreter, params)
     local flag = false
@@ -379,7 +379,7 @@ local __eq__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __eql__function = function(interpreter, params)
     if #params ~= 2 then
@@ -398,7 +398,7 @@ local __eql__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __equal__function = function(interpreter, params)
     if #params ~= 2 then
@@ -414,7 +414,7 @@ local __equal__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __less_than__function = function(interpreter, params)
     local flag = true
@@ -449,7 +449,7 @@ local __less_than__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __less_equal__function = function(interpreter, params)
     local flag = true
@@ -484,7 +484,7 @@ local __less_equal__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __greater_than__function = function(interpreter, params)
     local flag = true
@@ -519,7 +519,7 @@ local __greater_than__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __greater_equal__function = function(interpreter, params)
     local flag = true
@@ -1434,7 +1434,7 @@ local __append__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __first_function = function(interpreter, params)
     if #params ~= 1 then
@@ -1461,7 +1461,7 @@ local __first_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __last_function = function(interpreter, params)
     if #params ~= 1 then
@@ -1488,7 +1488,7 @@ local __last_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __length_function = function(interpreter, params)
     if #params ~= 1 then
@@ -1512,7 +1512,7 @@ local __length_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __find_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1546,7 +1546,7 @@ local __find_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __position_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1580,7 +1580,7 @@ local __position_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __member_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1624,7 +1624,7 @@ local __member_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __rest_function = function(interpreter, params)
     if #params ~= 1 then
@@ -1657,7 +1657,7 @@ end
 
 ---maybe this function should take address into consideration
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __car_function = function(interpreter, params)
     return __first_function(interpreter, params)
@@ -1665,14 +1665,14 @@ end
 
 ---maybe this function should take address into consideration
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __cdr_function = function(interpreter, params)
     return __rest_function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __push_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1714,7 +1714,7 @@ end
 ---second is the hashTable
 ---third is the flag about whether success or not
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __gethash_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1751,7 +1751,7 @@ local __gethash_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __remhash_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1784,7 +1784,7 @@ local __remhash_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __make_instance_function = function(interpreter, params)
     if #params == 0 then
@@ -1818,7 +1818,7 @@ local __make_instance_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __slot_value_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1858,7 +1858,7 @@ local __type_of__function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __inspect_function = function(interpreter, params)
     if #params ~= 1 then
@@ -1869,7 +1869,7 @@ local __inspect_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __class_of_function = function(interpreter, params)
     if #params ~= 1 then
@@ -1880,7 +1880,7 @@ local __class_of_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __funcall_function = function(interpreter, params)
     if #params == 0 then
@@ -1958,7 +1958,7 @@ local __apply_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __maphash_function = function(interpreter, params)
     if #params ~= 2 then
@@ -1996,7 +1996,7 @@ local __maphash_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __typep_function = function(interpreter, params)
     if #params ~= 2 then
@@ -2045,7 +2045,7 @@ local __typep_function = function(interpreter, params)
 end
 
 ---@param interpreter Interpreter
----@param  params table<Expr, integer>
+---@param  params table<integer, Expr>
 ---@return T
 local __subtypep_function = function(interpreter, params)
     if #params ~= 2 then
