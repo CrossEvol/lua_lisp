@@ -1618,6 +1618,137 @@ describe("Interpreter tests", function()
                 BuiltinClassModule.Null:new({})
             )
         end)
+        it("find-class", function()
+            TEST_INTERPRETER("(find-class 'tt)", BuiltinClassModule.InnerClass:find("tt"))
+            TEST_INTERPRETER("(find-class 'number)", BuiltinClassModule.InnerClass:find("number"))
+            TEST_INTERPRETER("(find-class 'integer)", BuiltinClassModule.InnerClass:find("integer"))
+            TEST_INTERPRETER("(find-class 'fixnum)", BuiltinClassModule.InnerClass:find("fixnum"))
+            TEST_INTERPRETER("(find-class 'float)", BuiltinClassModule.InnerClass:find("float"))
+            TEST_INTERPRETER("(find-class 'single-float)", BuiltinClassModule.InnerClass:find("single-float"))
+            TEST_INTERPRETER("(find-class 'rational)", BuiltinClassModule.InnerClass:find("rational"))
+            TEST_INTERPRETER("(find-class 'character)", BuiltinClassModule.InnerClass:find("character"))
+            TEST_INTERPRETER("(find-class 'string)", BuiltinClassModule.InnerClass:find("string"))
+            TEST_INTERPRETER("(find-class 'simple-string)", BuiltinClassModule.InnerClass:find("simple-string"))
+            TEST_INTERPRETER("(find-class 'list)", BuiltinClassModule.InnerClass:find("list"))
+            TEST_INTERPRETER("(find-class 'cons)", BuiltinClassModule.InnerClass:find("cons"))
+            TEST_INTERPRETER("(find-class 'vector)", BuiltinClassModule.InnerClass:find("vector"))
+            TEST_INTERPRETER("(find-class 'simple-vector)", BuiltinClassModule.InnerClass:find("simple-vector"))
+            TEST_INTERPRETER("(find-class 'function)", BuiltinClassModule.InnerClass:find("function"))
+            TEST_INTERPRETER("(find-class 'method)", BuiltinClassModule.InnerClass:find("method"))
+            TEST_INTERPRETER("(find-class 'hash-table)", BuiltinClassModule.InnerClass:find("hash-table"))
+            TEST_INTERPRETER_ERROR("(find-class 'person)")
+            TEST_INTERPRETER([[
+                    (defclass base ()())
+                    (find-class 'base)
+                ]],
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "base" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "base" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                })
+            )
+            TEST_INTERPRETER_ERROR([[
+                    (defclass super ()())
+                    (defvar s1 (make-instance 'super))
+                    (find-class 's1)
+                ]]
+            )
+        end)
+        it("class-name", function()
+            TEST_INTERPRETER(
+                "(class-name (find-class 'tt))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "TT" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'number))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "NUMBER" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'integer))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "INTEGER" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'fixnum))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "FIXNUM" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'float))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "FLOAT" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'single-float))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "SINGLE-FLOAT" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'rational))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "RATIONAL" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'character))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "CHARACTER" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'string))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "STRING" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'simple-string))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "SIMPLE-STRING" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'list))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "LIST" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'cons))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "CONS" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'vector))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "VECTOR" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'simple-vector))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "SIMPLE-VECTOR" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'function))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "FUNCTION" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'method))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "METHOD" })
+            )
+            TEST_INTERPRETER(
+                "(class-name (find-class 'hash-table))",
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "HASH-TABLE" })
+            )
+            TEST_INTERPRETER([[
+                    (defclass base ()())
+                    (class-name (find-class 'base))
+                ]],
+                BuiltinClassModule.StandardClass:new({
+                    name = BuiltinClassModule.Symbol:new({ name = "base" }),
+                    initArgs = {},
+                    superClassRefs = {},
+                    staticFields = {},
+                    instanceFields = {},
+                    methods = {},
+                }),
+                BuiltinClassModule.SimpleBaseString:new({ stringValue = "BASE" })
+            )
+        end)
     end)
     context("FlowControl", function()
         it("IfCall", function()

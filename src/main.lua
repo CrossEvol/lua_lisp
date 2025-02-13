@@ -146,7 +146,8 @@ local AST = require("src.ast")
 local BuiltinClassModule = require("src.builtin_class")
 
 local text = [[
-(subtypep 'lambda 'tt)
+                (defclass person ()())
+                (class-name (find-class 'person))
 ]]
 
 local lexer = Lexer:new({ text = text })
@@ -157,7 +158,7 @@ local results = interpreter:interpret(ast)
 print(results)
 local expects = {
     BuiltinClassModule.StandardClass:new({
-        name = BuiltinClassModule.Symbol:new({ name = "parent" }),
+        name = BuiltinClassModule.Symbol:new({ name = "person" }),
         initArgs = {},
         superClassRefs = {},
         staticFields = {},
@@ -165,24 +166,13 @@ local expects = {
         methods = {},
     }),
     BuiltinClassModule.StandardClass:new({
-        name = BuiltinClassModule.Symbol:new({ name = "child" }),
+        name = BuiltinClassModule.Symbol:new({ name = "person" }),
         initArgs = {},
-        superClassRefs = {
-            BuiltinClassModule.StandardClass:new({
-                name = BuiltinClassModule.Symbol:new({ name = "parent" }),
-                initArgs = {},
-                superClassRefs = {},
-                staticFields = {},
-                instanceFields = {},
-                methods = {},
-            })
-        },
+        superClassRefs = {},
         staticFields = {},
         instanceFields = {},
         methods = {},
-    }),
-    BuiltinClassModule.Symbol:new({ name = "pa" }),
-    BuiltinClassModule.True:new({})
+    })
 }
 local flag    = true
 for i = 1, #results do

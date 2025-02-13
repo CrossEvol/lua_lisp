@@ -2112,6 +2112,50 @@ local __subtypep_function = function(interpreter, params)
     end
 end
 
+---@param interpreter Interpreter
+---@param  params table<integer, Expr>
+---@return T
+local __find_class_function = function(interpreter, params)
+    if #params ~= 1 then
+        error(InterpreterError:new({}))
+    end
+
+    local classVariable = params[1]
+    if classVariable.astType ~= AST.AST_TYPE.VARIABLE then
+        error(InterpreterError:new({}))
+    end
+    ---@cast classVariable Variable
+
+    local derivedClass = BuiltinClassModule.InnerClass:find(classVariable.value.name)
+    if derivedClass ~= nil then
+        return derivedClass
+    else
+        local classRef = interpreter:visit(classVariable)
+        if classRef.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_CLASS then
+            error(InterpreterError:new({}))
+        end
+        return classRef
+    end
+end
+
+---@param interpreter Interpreter
+---@param  params table<integer, Expr>
+---@return T
+local __class_name_function = function(interpreter, params)
+    if #params ~= 1 then
+        error(InterpreterError:new({}))
+    end
+
+    local classRef = interpreter:visit(params[1])
+    if classRef.classType ~= BuiltinClassModule.BUILT_IN_CLASS.STANDARD_CLASS then
+        error(InterpreterError:new({}))
+    end
+    ---@cast classRef StandardClass
+    local className = classRef.name.name
+    local result = BuiltinClassModule.SimpleBaseString:new({ stringValue = string.upper(className) })
+    return result
+end
+
 ---@class BUILT_IN_FUNCTION
 local BUILT_IN_FUNCTION = {
     ["make-instance"]     = __make_instance_function,
@@ -2122,8 +2166,8 @@ local BUILT_IN_FUNCTION = {
     ["format"]            = function(...) end, ---@deprecated
     ["class-of"]          = __class_of_function,
     ["type-of"]           = __type_of__function,
-    ["find-class"]        = function(...) end,
-    ["class-name"]        = function(...) end,
+    ["find-class"]        = __find_class_function,
+    ["class-name"]        = __class_name_function,
     ["typep"]             = __typep_function,
     ["cons"]              = __cons__function,
     ["vector"]            = __vector__function,
