@@ -47,3 +47,7 @@ lua_modules
 .luarocks
 lua.bat
 luarocks.bat
+/luarocks
+/lua
+/lua_modules
+/.luarocks

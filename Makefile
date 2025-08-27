@@ -1,12 +1,12 @@
-
 # Use OS-agnostic path separator
 ifeq ($(OS),Windows_NT)
     PATH_SEP = \\
-    TSC = lua_modules\bin\tsc.bat
+    TSC = $(shell cygpath -w $(CURDIR)\lua_modules\bin\tsc.bat)
     PATHSEP = \\
 else
     PATH_SEP = /
-    TSC = lua_modules/bin/tsc
+    # 使用 $(CURDIR) 来确保路径是绝对的
+    TSC = $(CURDIR)/lua_modules/bin/tsc
     PATHSEP = /
 endif
 
@@ -30,25 +30,28 @@ tsc:
 	$(TSC) -f $(file)
 
 # Run all tests
-test: lexer_spec parser_spec interpreter_spec
+test: $(TEST_TARGETS)
 	@echo "All tests completed"
 
-# Pattern rule for test files
-%_spec: $(TEST_DIR)$(PATHSEP)%_spec.lua
-	@echo "Running test: $<"
-	@if [ ! -f "$<" ]; then \
-		echo "Error: Test file $< not found"; \
+# 修改：使用函数来运行特定测试，而不是模式规则
+define run_test
+	@echo "Running test: $(TEST_DIR)$(PATHSEP)$(1).lua"
+	@if [ ! -f "$(TEST_DIR)$(PATHSEP)$(1).lua" ]; then \
+		echo "Error: Test file $(TEST_DIR)$(PATHSEP)$(1).lua not found"; \
 		exit 1; \
 	fi
-	$(TSC) -f $<
+	$(TSC) -f $(TEST_DIR)$(PATHSEP)$(1).lua
+endef
+
+# 为每个测试创建显式规则
+$(TEST_TARGETS):
+	$(call run_test,$@)
 
 main:
 	@lua $(MAIN_FILE)
-.PHONY: main
 
 repl:
 	pwsh.exe abcl.ps1
-.PHONY: repl
 
 # Clean target
 clean:
@@ -56,15 +59,19 @@ clean:
 	# Add commands to clean temporary files if needed
 
 # Mark targets as phony
-.PHONY: tsc test $(TEST_TARGETS) main clean
+.PHONY: tsc test main clean repl $(TEST_TARGETS)
 
 # Help target
 help:
 	@echo "Available targets:"
 	@echo "  test          - Run all tests"
-	@echo "  <name>_spec   - Run specific test (e.g., make example_spec)"
+	@echo "  <name>_spec   - Run specific test (e.g., make lexer_spec)"
 	@echo "  main          - Run main program"
+	@echo "  repl          - Start REPL"
 	@echo "  clean         - Clean temporary files"
 	@echo "  help          - Show this help message"
+	@echo ""
+	@echo "Available test targets:"
+	@echo "  $(TEST_TARGETS)"
 
 .PHONY: help
